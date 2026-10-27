@@ -1,0 +1,35 @@
+# Internal admin panel accidentally exposed to the internet.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-panel
+  namespace: internal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-panel
+  template:
+    metadata:
+      labels:
+        app: admin-panel
+    spec:
+      hostNetwork: true
+      containers:
+        - name: web
+          image: ghcr.io/example/admin-panel
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-panel
+  namespace: internal
+spec:
+  type: LoadBalancer
+  selector:
+    app: admin-panel
+  ports:
+    - port: 80
+      targetPort: 8080

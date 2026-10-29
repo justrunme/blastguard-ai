@@ -13,8 +13,8 @@ from blastguard_ai.loop import MAX_ATTEMPTS, run_remediation
 from blastguard_ai.manifest import MAX_MANIFEST_BYTES
 from blastguard_ai.report import to_json, to_markdown
 
-SESSION_RUN_CAP = int(os.environ.get("BLASTGUARD_SESSION_RUN_CAP", "5"))
-GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "400"))
+SESSION_RUN_CAP = int(os.environ.get("BLASTGUARD_SESSION_RUN_CAP", "10"))
+GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "5000"))
 SAMPLES = {p.stem: p.read_text() for p in sorted((Path(__file__).parent / "samples").glob("*.yaml"))}
 COLORS = {"BLOCKED": "#e5484d", "VERIFIED": "#30a46c", "UNRESOLVED": "#f5a524",
           "SAFE_TO_PROPOSE": "#30a46c", "REVIEW_REQUIRED": "#f5a524", "NOT_PROPOSED": "#e5484d"}
@@ -127,11 +127,29 @@ if res:
     t = res.totals()
     st.markdown(f'{badge(res.initial_status)}<span class="bg-arrow">→</span>{badge(res.status)}',
                 unsafe_allow_html=True)
-    st.markdown(f'**Release decision:** {badge(res.release)}', unsafe_allow_html=True)
+    last = res.attempts[-1].get("verification", {}) if res.attempts else {}
+    rem_blocking = len([f for f in last.get("findings", []) if f["blocking"]]) if last else None
+    vals = last.get("validators", []) if last else []
+    c1, c2, c3, c4 = st.columns(4)
+    c1.markdown("**1. Policy checks**")
+    c1.markdown(f"{len([f for f in res.initial_findings if f['blocking']])} blocking → "
+                f"{rem_blocking if rem_blocking is not None else '–'} remaining")
+    c2.markdown("**2. External validators**")
+    c2.markdown("<br>".join(f"{v['name']}: **{v['status']}**" for v in vals) or "not run")
+    if res.status == "VERIFIED" and not res.validators_complete:
+        c2.caption("Incomplete: not counted as independent verification.")
+    c3.markdown("**3. Intent preservation**")
+    if res.intent is None:
+        c3.markdown("not run")
+    else:
+        hi = len([d for d in res.intent["drifts"] if d["severity"] == "high"])
+        c3.markdown(f"**{res.intent['verdict']}**<br>{hi} high-impact, {len(res.intent['drifts'])} total drifts",
+                    unsafe_allow_html=True)
+    c4.markdown("**4. Release decision**")
+    c4.markdown(badge(res.release), unsafe_allow_html=True)
     st.caption(res.release_note or RELEASE_TEXT[res.release])
     m = st.columns(5)
     m[0].metric("Initial findings", len([f for f in res.initial_findings if f["blocking"]]))
-    last = res.attempts[-1].get("verification", {}) if res.attempts else {}
     m[1].metric("Remaining", len([f for f in last.get("findings", []) if f["blocking"]]) if last else "–")
     m[2].metric("Attempts", len(res.attempts))
     m[3].metric("Tokens", t["total_tokens"])

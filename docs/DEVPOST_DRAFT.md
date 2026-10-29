@@ -22,11 +22,26 @@ where the model does the work and deterministic tools hold the veto.
 5. Up to 3 attempts with verifier feedback; evidence report (JSON/Markdown) with per-attempt findings, tokens, timings.
 
 ## Results
-[PLACEHOLDER: fill from examples/summary.json after the first real run, worded "on this corpus".]
+On this corpus (3 intentionally dangerous manifests; real Nemotron calls via Token Factory), all three went
+BLOCKED → VERIFIED on the first attempt, in 2.9 to 4.8 seconds and 1,403 to 1,649 tokens per run. Blocking findings
+before the patch: 9, 6 and 8; after the patch: 0, verified by the deterministic rules, kubeconform and kube-linter.
+This is a smoke test on three samples, not an evaluation, and VERIFIED means "passed these checks", not "works in a
+cluster": in sample 01 the model swapped `hostPath: /` for an `emptyDir`, which is safe but would break a real log
+collector. The retry path was not needed by the real model on this corpus.
 
 ## Challenges
-[PLACEHOLDER: fill with real issues hit during real runs, e.g. tool-call format, token budget, specific failures.]
+* Getting a verdict you can trust: the model's output is treated as untrusted input, so the loop fails closed to
+  UNRESOLVED on any parse, API or budget problem.
+* The first hosted run showed `kubeconform` and `kube-linter` as `not_installed` on Streamlit Cloud, so the app now
+  fetches the pinned releases at start-up and the evidence report records each validator's real status.
+* A public demo needs a spend cap: session and process-wide run limits protect the API budget.
 * Designing the guard so "delete the workload" or "swap the image" can't count as a fix.
+
+## What existed before / what is new
+The original [BlastGuard](https://github.com/justrunme/blastguard) (Go, a CVE blast-radius decision engine) existed
+before the Submission Period and is not integrated in this MVP. Everything in
+[blastguard-ai](https://github.com/justrunme/blastguard-ai) was built during the Submission Period: remediation
+loop, 13 rules, identity guard, validator integration, Nemotron client, evidence reports, Streamlit UI, tests.
 
 ## What's next
 * Wire in the original BlastGuard engine for CVE/exposure decisions on the images.

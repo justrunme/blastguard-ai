@@ -3,6 +3,8 @@
 **Autonomous Kubernetes Security Remediation Agent** — built for the Nebius x NVIDIA Global AI Hackathon
 (track: Coding and Agentic Engineering).
 
+**Live demo:** https://blastguard-ai.streamlit.app/ · **Repo:** https://github.com/justrunme/blastguard-ai
+
 Paste a risky Kubernetes manifest. Deterministic checks find the security problems, NVIDIA Nemotron (served by
 Nebius Token Factory) proposes a patched manifest, and independent verifiers decide whether the patch is accepted.
 Up to 3 attempts, then a clear verdict: **BLOCKED → VERIFIED** or **UNRESOLVED**, with a diff and an evidence report.
@@ -101,9 +103,25 @@ The app and `scripts/run_real.py` only use the real API.
 
 ## Results
 
-Real-API runs are saved in `examples/` (evidence JSON + Markdown per sample, `summary.json`). See that folder for
-what actually happened, including failed attempts. Any claim about fix rates applies only to those samples
-("on this corpus").
+Real-API runs are saved in `examples/` (evidence JSON + Markdown per sample, `summary.json`). Any claim about
+fix rates applies only to those samples ("on this corpus").
+
+On this corpus (3 intentionally dangerous manifests, model `nvidia/nemotron-3-super-120b-a12b` through Token
+Factory, `submit_patch` tool call on every attempt):
+
+| Sample | Blocking findings before | Result | Attempts | Tokens | Wall time |
+|---|---|---|---|---|---|
+| 01-privileged-hostpath | 9 | VERIFIED | 1 | 1649 | 4.8 s |
+| 02-latest-root-nolimits | 6 | VERIFIED | 1 | 1403 | 2.9 s |
+| 03-loadbalancer-exposed | 8 | VERIFIED | 1 | 1582 | 4.0 s |
+
+All three passed on the first attempt, so the retry path (feedback to the model after a failed verification) was
+not exercised against the real model on this corpus; it is covered only by the fake-client tests. Three samples
+is a smoke test, not an evaluation.
+
+Important caveat: VERIFIED means the patch passes the security checks, not that the workload still works. In
+sample 01 the model replaced `hostPath: /` with an `emptyDir`, which is safe but would break a real log collector.
+Always review the diff.
 
 ## What existed before / what was built during the Submission Period
 

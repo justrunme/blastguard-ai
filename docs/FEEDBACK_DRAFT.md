@@ -8,8 +8,8 @@ First-hand notes from building BlastGuard AI. Every number comes from the saved 
 What worked well
 * OpenAI compatibility is real: the stock `openai` Python SDK worked with only `base_url` and the API key changed.
 * `GET /v1/models` made picking `nvidia/nemotron-3-super-120b-a12b` trivial.
-* Reliability under a test load: across the 48 benchmark runs plus 18 blind runs (about 90 model calls, 151k tokens
-  in total) we saw 0 API errors and 0 harness errors. Median wall time per remediation run was about 5.4 s
+* Reliability under a test load: the 48 benchmark runs (66 model calls, 105k tokens) had 0 API errors and 0 harness
+  errors; the 18 blind runs added 24 calls and 46k tokens with no run lost to the API. Median wall time per remediation run was about 5.4 s
   (maximum 15.2 s), including up to three model attempts.
 * Tool calling worked: patches come back through a `submit_patch` function call (channel `tool_call` in the recorded
   evidence), so no free-text parsing was needed.
@@ -21,8 +21,9 @@ What could be better
   new users a detour.
 * The billing address field rejected a German letter ("ö", "Use only Latin letters and numbers"), which is awkward
   for European users.
-* There is no per-key spend limit that we could find in the console. We had to enforce our own caps in the app
-  (per-session and process-wide run limits) to protect a public demo. A per-key budget would make public demos safer.
+* For a public demo we enforced our own spend caps in the app (per-session and process-wide run limits). We did not
+  look for, and are not claiming the absence of, a per-key budget in the console; if there is one, a pointer from the
+  API-key page would help public-demo builders.
 * The promo credit was applied under Billing, Payments, "With promo code"; this was easy to miss.
 
 ## NVIDIA Nemotron (nemotron-3-super-120b-a12b)

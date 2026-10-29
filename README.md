@@ -134,7 +134,7 @@ Samples 01 to 03 are intentionally dangerous; sample 04 is a mostly hardened API
 SAFE_TO_PROPOSE. In the latest run, sample 04 needed two attempts: attempt 1 failed kube-linter, and the failure
 was fed back to the model (the first time the retry path was exercised by the real model). Release decisions were
 stable across the real runs we did, but earlier runs differed in attempt counts and tokens, and the model is
-non-deterministic. This is a smoke test, not an evaluation (a larger benchmark is in progress).
+non-deterministic. This table is a smoke test; the benchmark, blind challenge and runtime proof below add more evidence.
 
 SAFE_TO_PROPOSE requires: security verification passed, every external validator (kubeconform, kube-linter) ran
 and passed, and the Intent Gate found no high-impact static drift. If a validator is missing or errors, the
@@ -219,7 +219,7 @@ judged the nginx container alone because the sidecar image in the case is fictio
 * The rule set is intentionally small; passing it does not make a workload secure.
 * Pinned image tags are chosen by the model; BlastGuard AI does not check that the tag exists in the registry.
   Review the diff (e.g. `readOnlyRootFilesystem: true` may need writable `emptyDir` mounts for the app to start).
-* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster.
+* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster. The app itself never touches a cluster; the cluster evidence below comes from separate CI runs on disposable kind clusters.
 * CVE/exposure decisions from the original BlastGuard are not wired in yet.
 
 ## License

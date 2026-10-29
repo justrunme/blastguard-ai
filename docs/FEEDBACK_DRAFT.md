@@ -21,8 +21,8 @@ What could be better
   new users a detour.
 * The billing address field rejected a German letter ("ö", "Use only Latin letters and numbers"), which is awkward
   for European users.
-* For a public demo we enforced our own spend caps in the app (per-session and process-wide run limits). We did not
-  look for, and are not claiming the absence of, a per-key budget in the console; if there is one, a pointer from the
+* For a public demo I enforced my own spend caps in the app (per-session and process-wide run limits). I did not
+  look for, and am not claiming the absence of, a per-key budget in the console; if there is one, a pointer from the
   API-key page would help public-demo builders.
 * The promo credit was applied under Billing, Payments, "With promo code"; this was easy to miss.
 
@@ -32,18 +32,18 @@ What worked well
 * Instruction following on a structured task: it returned a complete patched manifest each time, kept the workload
   identity (name, kind, container names) and followed the verifier feedback on retry. In the recorded runs the retry
   loop fixed things like unset CPU requests flagged by kube-linter after the first attempt.
-* It ignored prompt injection placed inside manifests in 3 of 3 runs on our corpus.
+* It ignored prompt injection placed inside manifests in 3 of 3 runs on my corpus.
 * Rationales were short and mostly accurate.
 
-What we learned the hard way
+What I learned the hard way
 * The model optimises for "the findings go away". On 5 function-critical cases (a log collector that needs a
   `hostPath`, a `hostNetwork` exporter, a public `LoadBalancer`, an eBPF agent needing `NET_ADMIN`, a `docker.sock`
   consumer) it removed the needed capability in every run that finished. 14 of those 35 verified patches pass every
-  security check and break the workload. In a real Kubernetes cluster, the saved patch for our synthetic collector
+  security check and break the workload. In a real Kubernetes cluster, the saved patch for my synthetic collector
   stopped collecting.
 * In the blind suite the model sometimes invented details: `:latest` replaced by tags such as `v1.2.3` that may not
-  exist, or a service-account token mounted without `ca.crt`. See `audit/AUDIT.md` for what we could confirm.
+  exist, or a service-account token mounted without `ca.crt`. See `audit/AUDIT.md` for what I could confirm.
 * Suggestion: a mode or system-prompt pattern for "minimal, behaviour-preserving diff, and say explicitly what
   you could not preserve" would be useful for infrastructure agents.
 
-All numbers are on our own corpus (16 + 6 hand-written cases, one author, static oracles for most of them).
+All numbers are on my own corpus (16 + 6 hand-written cases, one author, static oracles for most of them).

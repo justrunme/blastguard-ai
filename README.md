@@ -133,7 +133,7 @@ tool call), latest real run, see `examples/summary.json`:
 Samples 01 to 03 are intentionally dangerous; sample 04 is a mostly hardened API and is the only one that reaches
 SAFE_TO_PROPOSE. In the latest run, sample 04 needed two attempts: attempt 1 failed kube-linter, and the failure
 was fed back to the model (the first time the retry path was exercised by the real model). Release decisions were
-stable across the real runs we did, but earlier runs differed in attempt counts and tokens, and the model is
+stable across the real runs I did, but earlier runs differed in attempt counts and tokens, and the model is
 non-deterministic. This table is a smoke test; the benchmark, blind challenge and runtime proof below add more evidence.
 
 SAFE_TO_PROPOSE requires: security verification passed, every external validator (kubeconform, kube-linter) ran

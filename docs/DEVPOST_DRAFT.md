@@ -32,13 +32,13 @@ its exposure. "Findings: 0" is not the same as "still works".
    validator is missing or the gate cannot decide, it fails closed to REVIEW_REQUIRED.
 6. Evidence report (JSON and Markdown) per run: attempts, findings, tokens, timings, release decision.
 
-## Evidence (all on our own corpus, nothing hidden)
+## Evidence (all on my own corpus, nothing hidden)
 * **Demo samples (real Nemotron runs):** 01, 02 and 03 pass security verification and are sent to review; 04 reaches SAFE_TO_PROPOSE after a real retry.
 * **Benchmark, 16 cases, 48 real runs:** 35 patches passed security verification. A security-only tool would accept all 35, and 14 of them break the function the workload needs (for example `hostPath` turned into `emptyDir`). BlastGuard accepted 0 of those 14 as safe and sent them to review; it sent 0 function-preserving patches to review. Already-clean manifests (6 of 6) need no change, invalid inputs (6 of 6) are rejected before any model call, and a prompt injection inside a manifest was ignored in 3 of 3 runs. Static oracles, small corpus, written by the project.
 * **Runtime proof (real kind cluster, GitHub Actions):** a synthetic collector reads a marker file from a node `hostPath`. The original reports COLLECTED; Nemotron's patch passes every security check and reports NOTHING_TO_COLLECT. The recorded run shows the real loop: attempt 1 failed (kept the hostPath), attempt 2 passed security, and the gate returned REVIEW_REQUIRED.
-* **Blind challenge, 6 unseen cases, 18 real runs:** the frozen oracles found no broken function (0 false SAFE), and the gate sent 13 of 18 to review. We audited those calls afterwards in kind: 2 failure modes confirmed across 6 runs (nginx crash-loops on a read-only root; a kubectl CronJob fails TLS verification without `ca.crt`), 3 could not be tested, and 4 may be false alarms. So the oracles were too lax; the gate is strict but its reasons are generic. We publish this as is.
+* **Blind challenge, 6 unseen cases, 18 real runs:** the frozen oracles found no broken function (0 false SAFE), and the gate sent 13 of 18 to review. I audited those calls afterwards in kind: 2 failure modes confirmed across 6 runs (nginx crash-loops on a read-only root; a kubectl CronJob fails TLS verification without `ca.crt`), 3 could not be tested, and 4 may be false alarms. So the oracles were too lax; the gate is strict but its reasons are generic. I publish this as is.
 
-## What we are not claiming
+## What I am not claiming
 VERIFIED means "passed these checks", not "works in your cluster". The app never touches a cluster. Corpora are small and
 hand-written by one author; oracles are static and conceptually overlap the gate; the runtime proof is one synthetic case.
 
@@ -46,7 +46,7 @@ hand-written by one author; oracles are static and conceptually overlap the gate
 * Treating the model output as untrusted: any parse, API, budget or validator problem fails closed.
 * A public demo needs a spend cap: per-session (10) and process-wide (1500) run limits.
 * Validators missing on the hosted app: it now installs pinned kubeconform and kube-linter at start-up and records each validator's real status.
-* Our own oracles turned out too weak on the blind suite, so we ran a cluster audit instead of tuning the gate to the answer.
+* My own oracles turned out too weak on the blind suite, so I ran a cluster audit instead of tuning the gate to the answer.
 
 ## What existed before / what is new
 The original [BlastGuard](https://github.com/justrunme/blastguard) (Go, a CVE blast-radius engine) existed before the Submission Period and is not integrated here. Everything in [blastguard-ai](https://github.com/justrunme/blastguard-ai) was built during the Submission Period: loop, rules, identity guard, Intent Preservation Gate, validator integration, Nemotron client, evidence reports, Streamlit UI, benchmark, blind suite, runtime proof and audit.

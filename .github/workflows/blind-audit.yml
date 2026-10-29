@@ -1,0 +1,23 @@
+name: blind-audit
+on:
+  workflow_dispatch:
+  push:
+    paths: ["audit/**", ".github/workflows/blind-audit.yml"]
+permissions:
+  contents: read
+jobs:
+  kind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: bg-audit
+      - name: Post-hoc audit of blind REVIEW calls (synthetic data, disposable cluster)
+        run: ./audit/run_audit.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blind-audit-result
+          path: audit/audit-result.json

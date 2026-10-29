@@ -1,0 +1,49 @@
+# b05 patched-runs-1: Job built from the CronJob jobTemplate verbatim; only change: image bitnami/kubectl:1.29.2 (404 on Docker Hub) -> bitnamilegacy/kubectl:1.29.2 (same tag, Bitnami legacy repo)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: janitor-p1
+  namespace: ops
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: pod-janitor
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      volumes:
+      - name: token-volume
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 3600
+      containers:
+      - name: janitor
+        image: bitnamilegacy/kubectl:1.29.2
+        command:
+        - kubectl
+        args:
+        - delete
+        - pods
+        - --field-selector=status.phase==Succeeded
+        - -A
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - name: token-volume
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true

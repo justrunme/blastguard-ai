@@ -1,0 +1,22 @@
+# b05 original: Job built from the CronJob jobTemplate verbatim; only change: image bitnami/kubectl:1.29.2 (404 on Docker Hub) -> bitnamilegacy/kubectl:1.29.2 (same tag, Bitnami legacy repo)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: janitor-original
+  namespace: ops
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: pod-janitor
+      restartPolicy: Never
+      containers:
+      - name: janitor
+        image: bitnamilegacy/kubectl:1.29.2
+        command:
+        - kubectl
+        args:
+        - delete
+        - pods
+        - --field-selector=status.phase==Succeeded
+        - -A

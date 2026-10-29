@@ -1,0 +1,65 @@
+# b03 patched-runs-1: verbatim from source except replicas set to 1 for the audit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-proxy
+  namespace: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-proxy
+  template:
+    metadata:
+      labels:
+        app: edge-proxy
+    spec:
+      shareProcessNamespace: true
+      automountServiceAccountToken: false
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:1.25.4
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      - name: config-reloader
+        image: registry.example.com/conf-reloader:2.1.0
+        command:
+        - /bin/reloader
+        args:
+        - --watch=/etc/nginx/conf.d
+        - --signal=HUP
+        - '--process=nginx: master'
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: conf
+        configMap:
+          name: edge-proxy-conf

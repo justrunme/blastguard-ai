@@ -28,9 +28,12 @@ result_for () {  # $1 = label, $2 = manifest
   kubectl apply -f "$2" >/dev/null
   kubectl rollout status -n "$NS" deploy/bg-collector --timeout=180s >/dev/null
   sleep 8
-  local out; out=$(kubectl logs -n "$NS" deploy/bg-collector --tail=20)
+  kubectl wait -n "$NS" --for=condition=Ready pod -l app=bg-collector --timeout=120s >/dev/null
+  local out; out=$(kubectl logs -n "$NS" -l app=bg-collector --tail=20)
   if grep -q COLLECTED <<<"$out" && ! grep -q NOTHING_TO_COLLECT <<<"$out"; then echo COLLECTED; else echo NOTHING_TO_COLLECT; fi
+  echo "--- logs ($1) ---" >&2; echo "$out" | sort | uniq -c >&2
   kubectl delete -f "$2" --wait=true >/dev/null
+  kubectl wait -n "$NS" --for=delete pod -l app=bg-collector --timeout=120s >/dev/null 2>&1 || true
 }
 
 ORIG=$(result_for original collector.yaml)

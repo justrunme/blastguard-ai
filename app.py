@@ -121,6 +121,10 @@ if go:
     st.rerun()
 
 res = st.session_state.get("result")
+if res is not None and not hasattr(res, "validators_complete"):
+    # a result stored by an older deploy of the app in this browser session: drop it instead of crashing
+    st.session_state.pop("result", None)
+    res = None
 if res:
     if not go:
         log_box.code("\n".join(res.events), language="text")

@@ -204,16 +204,24 @@ really stops doing its job in a cluster, which is what the gate flagged statical
 ([successful run](https://github.com/justrunme/blastguard-ai/actions/runs/40813773858)). The CI job also asserts that the recorded BlastGuard release is `REVIEW_REQUIRED`. The recorded run shows the real two-step loop: attempt 1 kept the `hostPath` and failed `BG002`, attempt 2 used `emptyDir` and passed. CI replays the saved patch and makes no new model call. It uses synthetic data only
 and never runs user YAML. It is one case, not a benchmark.
 
-## Blind challenge (6 unseen cases)
+## Blind challenge (6 unseen cases) and post-hoc audit
 
 Six extra cases (Postgres StatefulSet, legacy DNS client, nginx with a reloader sidecar, GPU inference server,
 kubectl CronJob, JVM service) were written and scored by a separate pass that had not read the gate, then run
 3 times each against the real model: [`benchmark/blind/results/RESULTS.md`](benchmark/blind/results/RESULTS.md).
 
 Result, on this corpus: all 18 runs reached VERIFIED; the frozen oracles found no broken function in any of them
-(so FALSE_SAFE = 0, but also TRUE_REVIEW = 0: this suite does not show that the gate catches real breakage). The gate
-sent 13 of 18 runs to review and let 5 through. Reading the patches afterwards, about 9 of those 13 (a `:latest` image
-turned into an invented tag, a read-only root with no writable path, a service-account token mounted without
-`ca.crt`) look genuinely broken in ways the blind oracles did not check, and about 4 look like false alarms. The
-official matrix is left as frozen. Limits: one author, static oracles, no cluster run; the gate gave generic reasons
-rather than naming the exact failure.
+(FALSE_SAFE = 0, but also TRUE_REVIEW = 0 by the oracles). The gate sent 13 of 18 runs to review. The frozen matrix
+is left as published: by the oracles those 13 are false alarms.
+
+**Post-hoc audit in a real cluster** ([`audit/AUDIT.md`](audit/AUDIT.md), disposable kind cluster in GitHub Actions,
+[evidence run](https://github.com/justrunme/blastguard-ai/actions/runs/40816573846)): of those 13 review calls,
+- 6 are **confirmed breaks**: nginx on a read-only root crash-loops in all 3 patched runs (`mkdir() "/tmp/proxy_temp"
+  failed (30: Read-only file system)`), and the kubectl CronJob with a token mounted without `ca.crt` fails TLS
+  verification in all 3 patched runs, while both originals work;
+- 3 could not be tested (the case image registry is fictional, so the invented-tag suspicion is not confirmed);
+- 4 were not checked and look like false alarms (b01 run 2, b06 runs 1-3).
+
+So the oracles were too lax, not the gate, for at least those 6 runs, and the gate gave generic reasons rather than
+naming the exact failure. Limits: post-hoc, one author, a small corpus, static oracles for the rest, and the audit
+judged the nginx container alone because the sidecar image in the case is fictional.

@@ -1,0 +1,23 @@
+name: runtime-proof
+on:
+  workflow_dispatch:
+  push:
+    paths: ["runtime/**", ".github/workflows/runtime-proof.yml"]
+permissions:
+  contents: read
+jobs:
+  kind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: bg-runtime
+      - name: Run runtime proof (synthetic data, disposable cluster)
+        run: ./runtime/run_kind_test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-result
+          path: runtime/runtime-result.json

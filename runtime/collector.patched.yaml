@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bg-collector
+  namespace: bg-runtime
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bg-collector
+  template:
+    metadata:
+      labels:
+        app: bg-collector
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: collector
+          image: busybox:1.36.1
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                if grep -q BG_SENTINEL /data/app.log 2>/dev/null; then echo COLLECTED; else echo NOTHING_TO_COLLECT; fi
+                sleep 2
+              done
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: hostlogs
+              mountPath: /data
+              readOnly: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+      volumes:
+        - name: hostlogs
+          emptyDir: {}

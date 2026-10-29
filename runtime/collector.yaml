@@ -1,0 +1,40 @@
+# Synthetic log collector used for the runtime proof (kind cluster in CI, disposable, no real host data).
+# MUST KEEP WORKING: it reads the host file /var/bg-demo/app.log through a hostPath mount and reports COLLECTED
+# when the file contains the marker BG_SENTINEL.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bg-collector
+  namespace: bg-runtime
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bg-collector
+  template:
+    metadata:
+      labels:
+        app: bg-collector
+    spec:
+      containers:
+        - name: collector
+          image: busybox:1.36.1
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                if grep -q BG_SENTINEL /data/app.log 2>/dev/null; then echo COLLECTED; else echo NOTHING_TO_COLLECT; fi
+                sleep 2
+              done
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: hostlogs
+              mountPath: /data
+              readOnly: true
+      volumes:
+        - name: hostlogs
+          hostPath:
+            path: /var/bg-demo
+            type: DirectoryOrCreate

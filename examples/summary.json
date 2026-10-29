@@ -1,0 +1,38 @@
+[
+  {
+    "sample": "01-privileged-hostpath.yaml",
+    "initial": "BLOCKED",
+    "final": "VERIFIED",
+    "attempts": 1,
+    "error": null,
+    "prompt_tokens": 1148,
+    "completion_tokens": 501,
+    "total_tokens": 1649,
+    "llm_latency_s": 4.66,
+    "wall_s": 4.82
+  },
+  {
+    "sample": "02-latest-root-nolimits.yaml",
+    "initial": "BLOCKED",
+    "final": "VERIFIED",
+    "attempts": 1,
+    "error": null,
+    "prompt_tokens": 997,
+    "completion_tokens": 406,
+    "total_tokens": 1403,
+    "llm_latency_s": 2.74,
+    "wall_s": 2.91
+  },
+  {
+    "sample": "03-loadbalancer-exposed.yaml",
+    "initial": "BLOCKED",
+    "final": "VERIFIED",
+    "attempts": 1,
+    "error": null,
+    "prompt_tokens": 1083,
+    "completion_tokens": 499,
+    "total_tokens": 1582,
+    "llm_latency_s": 3.77,
+    "wall_s": 3.98
+  }
+]

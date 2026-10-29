@@ -1,0 +1,185 @@
+{
+  "tool": "blastguard-ai",
+  "version": "0.1.0",
+  "generated_at": "2026-10-29T02:52:13+00:00",
+  "source": "03-loadbalancer-exposed.yaml",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "initial_status": "BLOCKED",
+  "final_status": "VERIFIED",
+  "error": null,
+  "initial_findings": [
+    {
+      "rule_id": "BG003",
+      "severity": "high",
+      "object": "Deployment/internal/admin-panel",
+      "container": "-",
+      "message": "hostNetwork enabled",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG011",
+      "severity": "medium",
+      "object": "Deployment/internal/admin-panel",
+      "container": "-",
+      "message": "Service account token automounted: set automountServiceAccountToken: false unless the API is needed",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG005",
+      "severity": "high",
+      "object": "Deployment/internal/admin-panel",
+      "container": "web",
+      "message": "May run as root (runAsNonRoot not true or runAsUser 0)",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG006",
+      "severity": "high",
+      "object": "Deployment/internal/admin-panel",
+      "container": "web",
+      "message": "allowPrivilegeEscalation not explicitly false",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG007",
+      "severity": "medium",
+      "object": "Deployment/internal/admin-panel",
+      "container": "web",
+      "message": "Missing CPU/memory limits: missing cpu,memory",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG008",
+      "severity": "medium",
+      "object": "Deployment/internal/admin-panel",
+      "container": "web",
+      "message": "Image uses :latest or has no tag/digest: ghcr.io/example/admin-panel",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG009",
+      "severity": "medium",
+      "object": "Deployment/internal/admin-panel",
+      "container": "web",
+      "message": "readOnlyRootFilesystem not true",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG012",
+      "severity": "high",
+      "object": "Service/internal/admin-panel",
+      "container": "-",
+      "message": "Service exposed via LoadBalancer: use ClusterIP behind an Ingress/gateway",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG013",
+      "severity": "info",
+      "object": "bundle",
+      "container": "-",
+      "message": "No NetworkPolicy in this manifest bundle: consider a default-deny NetworkPolicy",
+      "blocking": false
+    }
+  ],
+  "validators_initial": [
+    {
+      "name": "kubeconform",
+      "status": "pass",
+      "issues": [],
+      "detail": "{\"valid\": 2, \"invalid\": 0, \"errors\": 0, \"skipped\": 0}"
+    },
+    {
+      "name": "kube-linter",
+      "status": "fail",
+      "issues": [
+        "host-network: Deployment/admin-panel: resource shares host's network namespace (via hostNetwork=true).",
+        "latest-tag: Deployment/admin-panel: The container \"web\" is using an invalid container image, \"ghcr.io/example/admin-panel\". Please use images that are not blocked by the `BlockList` criteria : [\".*:(latest)$\" \"^[^:]*$\" \"(.*/[^:]+)$\"]",
+        "no-read-only-root-fs: Deployment/admin-panel: container \"web\" does not have a read-only root file system",
+        "run-as-non-root: Deployment/admin-panel: container \"web\" is not set to runAsNonRoot",
+        "unset-cpu-requirements: Deployment/admin-panel: container \"web\" has cpu request 0",
+        "unset-memory-requirements: Deployment/admin-panel: container \"web\" has memory limit 0"
+      ],
+      "detail": ""
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "feedback_given": [],
+      "llm_latency_s": 3.77,
+      "usage": {
+        "completion_tokens": 499,
+        "prompt_tokens": 1083,
+        "total_tokens": 1582,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 124,
+          "rejected_prediction_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 0,
+          "image_tokens": null,
+          "text_tokens": null,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 1083
+      },
+      "channel": "tool_call",
+      "rationale": "Fixed hostNetwork, automountServiceAccountToken, added securityContext (runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem), added CPU/memory limits/requests, pinned image tag, changed Service type to ClusterIP.",
+      "proposed_yaml": "# Internal admin panel accidentally exposed to the internet.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: admin-panel\n  template:\n    metadata:\n      labels:\n        app: admin-panel\n    spec:\n      hostNetwork: false\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: ghcr.io/example/admin-panel:v1.0.0\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"50m\"\n              memory: \"64Mi\"\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  type: ClusterIP\n  selector:\n    app: admin-panel\n  ports:\n    - port: 80\n      targetPort: 8080",
+      "verification": {
+        "ok": true,
+        "findings": [
+          {
+            "rule_id": "BG013",
+            "severity": "info",
+            "object": "bundle",
+            "container": "-",
+            "message": "No NetworkPolicy in this manifest bundle: consider a default-deny NetworkPolicy",
+            "blocking": false
+          }
+        ],
+        "guard": [],
+        "validators": [
+          {
+            "name": "kubeconform",
+            "status": "pass",
+            "issues": [],
+            "detail": "{\"valid\": 2, \"invalid\": 0, \"errors\": 0, \"skipped\": 0}"
+          },
+          {
+            "name": "kube-linter",
+            "status": "pass",
+            "issues": [],
+            "detail": ""
+          }
+        ],
+        "parse_error": null
+      }
+    }
+  ],
+  "totals": {
+    "prompt_tokens": 1083,
+    "completion_tokens": 499,
+    "total_tokens": 1582,
+    "llm_latency_s": 3.77
+  },
+  "wall_s": 3.98,
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -14,12 +14,25 @@\n       labels:\n         app: admin-panel\n     spec:\n-      hostNetwork: true\n+      hostNetwork: false\n+      automountServiceAccountToken: false\n       containers:\n         - name: web\n-          image: ghcr.io/example/admin-panel\n+          image: ghcr.io/example/admin-panel:v1.0.0\n           ports:\n             - containerPort: 8080\n+          securityContext:\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: \"100m\"\n+              memory: \"128Mi\"\n+            requests:\n+              cpu: \"50m\"\n+              memory: \"64Mi\"\n ---\n apiVersion: v1\n kind: Service\n@@ -27,9 +40,9 @@\n   name: admin-panel\n   namespace: internal\n spec:\n-  type: LoadBalancer\n+  type: ClusterIP\n   selector:\n     app: admin-panel\n   ports:\n     - port: 80\n-      targetPort: 8080\n+      targetPort: 8080",
+  "final_yaml": "# Internal admin panel accidentally exposed to the internet.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: admin-panel\n  template:\n    metadata:\n      labels:\n        app: admin-panel\n    spec:\n      hostNetwork: false\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: ghcr.io/example/admin-panel:v1.0.0\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"50m\"\n              memory: \"64Mi\"\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  type: ClusterIP\n  selector:\n    app: admin-panel\n  ports:\n    - port: 80\n      targetPort: 8080",
+  "last_unverified_candidate": null,
+  "events": [
+    "[   0.1s] Deterministic checks: 9 findings (8 blocking)",
+    "[   0.1s] Validator kubeconform: pass",
+    "[   0.1s] Validator kube-linter: fail",
+    "[   0.1s] Attempt 1/3: asking nvidia/nemotron-3-super-120b-a12b for a patch",
+    "[   4.0s] Attempt 1 verification: PASS (blocking=0, guard=0, parse_error=None)",
+    "[   4.0s] Final status: VERIFIED"
+  ]
+}

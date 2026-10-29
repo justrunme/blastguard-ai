@@ -41,7 +41,7 @@ for f in $M/b05-*.job.yaml; do
   kubectl wait -n ops --for=condition=failed job/"$job" --timeout=150s & b=$!
   wait -n $a $b; kill $a $b 2>/dev/null
   jst=$(kubectl get job -n ops "$job" -o json | jq -c '{succeeded:(.status.succeeded//0), failed:(.status.failed//0)}')
-  logs=$(kubectl logs -n ops job/"$job" --tail=20 2>&1)
+  logs=$(kubectl logs -n ops -l job-name="$job" --tail=20 --ignore-errors 2>&1); kubectl get pods -n ops -l job-name="$job" -o wide
   seed=$(kubectl get pod -n seed seed-pod -o name 2>/dev/null || echo deleted)
   echo "$jst"; echo "seed: $seed"; echo "$logs"
   put "b05/$v" "$(jq -n --argjson j "$jst" --arg s "$seed" --arg l "$logs" \
@@ -52,15 +52,16 @@ done
 
 # ---- b02: does registry.example.com/ledger-api serve any of the tags? (HTTP registry API + kubelet pull)
 for t in latest v1.2.3 v1.0.0; do
+  pn=pull-${t//./-}
   code=$(curl -s -m 15 -o /dev/null -w '%{http_code}' -H 'Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.v2+json' \
          "https://registry.example.com/v2/ledger-api/manifests/$t" 2>&1); rc=$?
-  kubectl run -n seed pull-$t --restart=Never --image=registry.example.com/ledger-api:$t >/dev/null
+  kubectl run -n seed $pn --restart=Never --image=registry.example.com/ledger-api:$t >/dev/null
   sleep 40
-  ev=$(kubectl get events -n seed --field-selector involvedObject.name=pull-$t -o json | jq -r '[.items[].message] | map(select(test("ull"))) | .[0:3] | join(" | ")')
-  wr=$(kubectl get pod -n seed pull-$t -o jsonpath='{.status.containerStatuses[0].state.waiting.reason}')
+  ev=$(kubectl get events -n seed --field-selector involvedObject.name=$pn -o json | jq -r '[.items[].message] | map(select(test("ull"))) | .[0:3] | join(" | ")')
+  wr=$(kubectl get pod -n seed $pn -o jsonpath='{.status.containerStatuses[0].state.waiting.reason}')
   echo "b02 $t: http=$code curl_rc=$rc waiting=$wr events=$ev"
   put "b02/$t" "$(jq -n --arg c "$code" --arg r "$rc" --arg w "$wr" --arg e "$ev" '{registry_http:$c, curl_rc:$r, pod_waiting_reason:$w, pull_events:$e}')"
-  kubectl delete pod -n seed pull-$t --wait=false
+  kubectl delete pod -n seed $pn --wait=false
 done
 
 jq . "$OUT"

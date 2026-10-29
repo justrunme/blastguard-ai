@@ -187,3 +187,19 @@ On this corpus, among the 35 runs that passed security verification after a mode
 ## License
 
 Apache-2.0. Copyright Andrey Lesnikov.
+
+## A/B counterfactual and runtime proof
+
+**A/B (no new model calls).** Re-reading the 35 saved benchmark runs that reached VERIFIED after a model patch, a
+security-only baseline would accept all 35, including 14 patches that break the declared function (for example a
+`hostPath` log collector turned into an `emptyDir`). BlastGuard with the Intent Preservation Gate sends those 14 to
+human review and accepts 0 of them as safe. See [`benchmark/results/AB.md`](benchmark/results/AB.md). This is on
+this corpus with static oracles, not a general detection rate.
+
+**Runtime proof on a disposable kind cluster.** [`runtime/`](runtime) holds a synthetic collector that reads a marker
+file from a node `hostPath`, and the real patch Nemotron produced for it through the BlastGuard loop (release:
+REVIEW_REQUIRED). A GitHub Actions workflow creates a throwaway kind cluster and runs both manifests:
+the original reports `COLLECTED`, the model-patched manifest reports `NOTHING_TO_COLLECT`. So the security-clean patch
+really stops doing its job in a cluster, which is what the gate flagged statically
+([successful run](https://github.com/justrunme/blastguard-ai/actions/runs/40813773858)). It uses synthetic data only
+and never runs user YAML. It is one case, not a benchmark.

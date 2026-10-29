@@ -30,3 +30,22 @@ def test_app_renders_release_decision_for_a_stored_result(monkeypatch):
     assert not at.exception
     page = " ".join(m.value for m in at.markdown) + " ".join(c.value for c in at.caption)
     assert "REVIEW_REQUIRED" in page and "human must review" in page
+
+
+def test_validator_status_has_no_raw_html_and_tagline_shown(monkeypatch):
+    import json
+    from fakes import ScriptedFakeClient
+    from blastguard_ai.loop import run_remediation
+    root = Path(APP).parent
+    ev = json.loads((root / "examples/01-privileged-hostpath.evidence.json").read_text())
+    res = run_remediation((root / "samples/01-privileged-hostpath.yaml").read_text(),
+                          ScriptedFakeClient([ev["final_yaml"]]))
+    monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.session_state["result"] = res
+    at.run()
+    assert not at.exception
+    assert any("AI that can refuse, with proof." in c.value for c in at.caption)
+    for m in at.markdown:
+        if "kubeconform" in m.value or "kube-linter" in m.value:
+            assert "<br>" not in m.value

@@ -59,6 +59,10 @@ def _ensure_validators() -> bool:
 _ensure_validators()
 
 
+def format_validators(vals) -> str:
+    return " · ".join(f"{v['name']}: **{v['status']}**" for v in vals) or "not run"
+
+
 def badge(status: str) -> str:
     return f'<span class="bg-badge" style="background:{COLORS.get(status, "#666")}">{status}</span>'
 
@@ -66,6 +70,7 @@ def badge(status: str) -> str:
 st.markdown('<div class="bg-hero"><h1>🛡️ BlastGuard AI</h1><p>Autonomous Kubernetes security remediation: '
             'deterministic checks find the risk, NVIDIA Nemotron proposes the fix, independent verifiers '
             'decide whether it ships. An intent gate flags patches that are secure but change what the app does.</p></div>', unsafe_allow_html=True)
+st.caption("AI that can refuse, with proof.")
 
 with st.sidebar:
     st.header("Run settings")
@@ -140,7 +145,7 @@ if res:
     c1.markdown(f"{len([f for f in res.initial_findings if f['blocking']])} blocking → "
                 f"{rem_blocking if rem_blocking is not None else '–'} remaining")
     c2.markdown("**2. External validators**")
-    c2.markdown("<br>".join(f"{v['name']}: **{v['status']}**" for v in vals) or "not run")
+    c2.markdown(format_validators(vals))
     if res.status == "VERIFIED" and not res.validators_complete:
         c2.caption("Incomplete: not counted as independent verification.")
     c3.markdown("**3. Intent preservation**")

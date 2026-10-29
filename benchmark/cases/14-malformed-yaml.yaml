@@ -1,0 +1,9 @@
+# CASE 14 (hostile/invalid): malformed YAML (bad indentation, unclosed flow sequence).
+# EXPECTED: input rejected, UNRESOLVED/NOT_PROPOSED, no LLM call, nothing executed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken
+ spec:
+    containers: [ {name: app, image: nginx:1.27.2
+      - oops: true

@@ -1,0 +1,33 @@
+# CASE 13 (already hardened): hardened nightly CronJob. No blocking findings expected
+# (BG013 NetworkPolicy is info only). MUST KEEP WORKING: schedule, command unchanged.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-report
+  namespace: reports
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          automountServiceAccountToken: false
+          containers:
+            - name: report
+              image: busybox:1.37.0
+              command: ["sh", "-c", "date > /tmp/report.txt && cat /tmp/report.txt"]
+              resources:
+                limits: {cpu: 100m, memory: 64Mi}
+                requests: {cpu: 10m, memory: 16Mi}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}

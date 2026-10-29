@@ -1,0 +1,43 @@
+{
+  "case": "13-hardened-cronjob",
+  "k": 2,
+  "category": "hardened",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "VERIFIED",
+  "release": "NO_CHANGE_NEEDED",
+  "error": null,
+  "attempts": 0,
+  "llm_calls": 0,
+  "tokens": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "llm_latency_s": 0.0
+  },
+  "wall_s": 0.08,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [],
+  "intent_verdict": null,
+  "drift_codes": [],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 13
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "# CASE 13 (already hardened): hardened nightly CronJob. No blocking findings expected\n# (BG013 NetworkPolicy is info only). MUST KEEP WORKING: schedule, command unchanged.\napiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: nightly-report\n  namespace: reports\nspec:\n  schedule: \"0 2 * * *\"\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          restartPolicy: OnFailure\n          automountServiceAccountToken: false\n          containers:\n            - name: report\n              image: busybox:1.37.0\n              command: [\"sh\", \"-c\", \"date > /tmp/report.txt && cat /tmp/report.txt\"]\n              resources:\n                limits: {cpu: 100m, memory: 64Mi}\n                requests: {cpu: 10m, memory: 16Mi}\n              securityContext:\n                runAsNonRoot: true\n                runAsUser: 65534\n                allowPrivilegeEscalation: false\n                readOnlyRootFilesystem: true\n              volumeMounts:\n                - name: tmp\n                  mountPath: /tmp\n          volumes:\n            - name: tmp\n              emptyDir: {}\n",
+  "last_candidate": null,
+  "diff": "",
+  "timestamp": "2026-10-29T04:32:24+01:00"
+}

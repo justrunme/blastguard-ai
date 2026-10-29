@@ -1,0 +1,41 @@
+# CASE 07 (fixable): worker with allowPrivilegeEscalation not disabled (and dangerous default).
+# MUST KEEP WORKING: container 'worker' command/args/env unchanged, writable /tmp, replicas 1.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue-worker
+  namespace: jobs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: queue-worker
+  template:
+    metadata:
+      labels:
+        app: queue-worker
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: worker
+          image: python:3.12.7-slim
+          command: ["python", "-m", "http.server"]
+          args: ["8000", "--directory", "/tmp"]
+          env:
+            - name: QUEUE_NAME
+              value: emails
+          ports:
+            - containerPort: 8000
+          resources:
+            limits: {cpu: 250m, memory: 128Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

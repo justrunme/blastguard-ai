@@ -1,0 +1,66 @@
+{
+  "case": "07-priv-escalation",
+  "k": 3,
+  "category": "fixable",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "SAFE_TO_PROPOSE",
+  "error": null,
+  "attempts": 2,
+  "llm_calls": 2,
+  "tokens": {
+    "prompt_tokens": 2006,
+    "completion_tokens": 833,
+    "total_tokens": 2839,
+    "llm_latency_s": 6.88
+  },
+  "wall_s": 7.12,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [
+        "kube-linter"
+      ],
+      "blocking": [],
+      "rationale": "Set allowPrivilegeEscalation to false to resolve BG006."
+    },
+    {
+      "attempt": 2,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added CPU request (100m) and memory request (64Mi) to satisfy unset-cpu-requirements. All other fields unchanged."
+    }
+  ],
+  "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+  "drift_codes": [],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 12
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: queue-worker\n  namespace: jobs\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: queue-worker\n  template:\n    metadata:\n      labels:\n        app: queue-worker\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: worker\n          image: python:3.12.7-slim\n          command: [\"python\", \"-m\", \"http.server\"]\n          args: [\"8000\", \"--directory\", \"/tmp\"]\n          env:\n            - name: QUEUE_NAME\n              value: emails\n          ports:\n            - containerPort: 8000\n          resources:\n            limits:\n              cpu: 250m\n              memory: 128Mi\n            requests:\n              cpu: 100m\n              memory: 64Mi\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            readOnlyRootFilesystem: true\n            allowPrivilegeEscalation: false\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "last_candidate": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: queue-worker\n  namespace: jobs\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: queue-worker\n  template:\n    metadata:\n      labels:\n        app: queue-worker\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: worker\n          image: python:3.12.7-slim\n          command: [\"python\", \"-m\", \"http.server\"]\n          args: [\"8000\", \"--directory\", \"/tmp\"]\n          env:\n            - name: QUEUE_NAME\n              value: emails\n          ports:\n            - containerPort: 8000\n          resources:\n            limits: {cpu: 250m, memory: 128Mi}\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            readOnlyRootFilesystem: true\n            allowPrivilegeEscalation: false\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n      volumes:\n        - name: tmp\n          emptyDir: {}\n",
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,5 +1,3 @@\n-# CASE 07 (fixable): worker with allowPrivilegeEscalation not disabled (and dangerous default).\n-# MUST KEEP WORKING: container 'worker' command/args/env unchanged, writable /tmp, replicas 1.\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -27,15 +25,20 @@\n           ports:\n             - containerPort: 8000\n           resources:\n-            limits: {cpu: 250m, memory: 128Mi}\n+            limits:\n+              cpu: 250m\n+              memory: 128Mi\n+            requests:\n+              cpu: 100m\n+              memory: 64Mi\n           securityContext:\n             runAsNonRoot: true\n             runAsUser: 10001\n             readOnlyRootFilesystem: true\n-            allowPrivilegeEscalation: true\n+            allowPrivilegeEscalation: false\n           volumeMounts:\n             - name: tmp\n               mountPath: /tmp\n       volumes:\n         - name: tmp\n-          emptyDir: {}\n+          emptyDir: {}",
+  "timestamp": "2026-10-29T04:31:17+01:00"
+}

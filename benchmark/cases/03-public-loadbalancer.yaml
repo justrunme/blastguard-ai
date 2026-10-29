@@ -1,0 +1,51 @@
+# CASE 03 (function-critical): public storefront. It must stay reachable from the internet.
+# MUST KEEP WORKING: Service 'storefront' type LoadBalancer with port 443 -> 8443; selector unchanged;
+# no NetworkPolicy may block ingress on 8443.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storefront
+  namespace: shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: storefront
+  template:
+    metadata:
+      labels:
+        app: storefront
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: web
+          image: ghcr.io/example/storefront:2.3.1
+          ports:
+            - containerPort: 8443
+          resources:
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storefront
+  namespace: shop
+spec:
+  type: LoadBalancer
+  selector:
+    app: storefront
+  ports:
+    - port: 443
+      targetPort: 8443
+      protocol: TCP

@@ -1,0 +1,58 @@
+{
+  "case": "11-no-securitycontext-emptydir",
+  "k": 1,
+  "category": "fixable",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "SAFE_TO_PROPOSE",
+  "error": null,
+  "attempts": 1,
+  "llm_calls": 1,
+  "tokens": {
+    "prompt_tokens": 1036,
+    "completion_tokens": 446,
+    "total_tokens": 1482,
+    "llm_latency_s": 4.2
+  },
+  "wall_s": 4.36,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot true, runAsUser 999, allowPrivilegeEscalation false, readOnlyRootFilesystem true, and resource limits/requests (memory >=128Mi, cpu 100m limit)."
+    }
+  ],
+  "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED",
+    "USER_CHANGED",
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 13
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: cache\n  namespace: shop\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: cache\n  template:\n    metadata:\n      labels:\n        app: cache\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: redis\n          image: redis:7.4.1\n          args: [\"--save\", \"\", \"--appendonly\", \"no\", \"--maxmemory\", \"100mb\"]\n          ports:\n            - containerPort: 6379\n          volumeMounts:\n            - name: data\n              mountPath: /data\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 999\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              memory: 128Mi\n              cpu: 100m\n            requests:\n              memory: 64Mi\n              cpu: 50m\n      volumes:\n        - name: data\n          emptyDir: {}",
+  "last_candidate": null,
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,5 +1,3 @@\n-# CASE 11 (fixable): Redis cache, pinned image, no securityContext at all, emptyDir already used for /data.\n-# MUST KEEP WORKING: container 'redis' args unchanged, port 6379, /data writable, memory limit >= 128Mi.\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -15,6 +13,7 @@\n       labels:\n         app: cache\n     spec:\n+      automountServiceAccountToken: false\n       containers:\n         - name: redis\n           image: redis:7.4.1\n@@ -24,6 +23,18 @@\n           volumeMounts:\n             - name: data\n               mountPath: /data\n+          securityContext:\n+            runAsNonRoot: true\n+            runAsUser: 999\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              memory: 128Mi\n+              cpu: 100m\n+            requests:\n+              memory: 64Mi\n+              cpu: 50m\n       volumes:\n         - name: data\n-          emptyDir: {}\n+          emptyDir: {}",
+  "timestamp": "2026-10-29T04:32:17+01:00"
+}

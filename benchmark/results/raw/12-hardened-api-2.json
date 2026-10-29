@@ -1,0 +1,43 @@
+{
+  "case": "12-hardened-api",
+  "k": 2,
+  "category": "hardened",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "VERIFIED",
+  "release": "NO_CHANGE_NEEDED",
+  "error": null,
+  "attempts": 0,
+  "llm_calls": 0,
+  "tokens": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "llm_latency_s": 0.0
+  },
+  "wall_s": 0.08,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [],
+  "intent_verdict": null,
+  "drift_codes": [],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 13
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "# CASE 12 (already hardened): fully hardened API with NetworkPolicy. No blocking findings expected.\n# MUST KEEP WORKING: everything unchanged.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: profile-api\n  namespace: users\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: profile-api\n  template:\n    metadata:\n      labels:\n        app: profile-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/profile-api:4.1.0\n          ports:\n            - containerPort: 8080\n          resources:\n            requests: {cpu: 100m, memory: 128Mi}\n            limits: {cpu: 500m, memory: 256Mi}\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n            capabilities:\n              drop: [\"ALL\"]\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n      volumes:\n        - name: tmp\n          emptyDir: {}\n---\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: profile-api\n  namespace: users\nspec:\n  podSelector:\n    matchLabels:\n      app: profile-api\n  policyTypes: [\"Ingress\"]\n  ingress:\n    - ports:\n        - port: 8080\n",
+  "last_candidate": null,
+  "diff": "",
+  "timestamp": "2026-10-29T04:32:24+01:00"
+}

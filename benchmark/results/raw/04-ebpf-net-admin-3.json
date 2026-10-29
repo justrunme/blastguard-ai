@@ -1,0 +1,102 @@
+{
+  "case": "04-ebpf-net-admin",
+  "k": 3,
+  "category": "function-critical",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "UNRESOLVED",
+  "initial_status": "BLOCKED",
+  "release": "NOT_PROPOSED",
+  "error": null,
+  "attempts": 3,
+  "llm_calls": 3,
+  "tokens": {
+    "prompt_tokens": 4334,
+    "completion_tokens": 1998,
+    "total_tokens": 6332,
+    "llm_latency_s": 14.89
+  },
+  "wall_s": 15.22,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "fail"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [
+        "kube-linter"
+      ],
+      "blocking": [
+        "BG002",
+        "BG003",
+        "BG005",
+        "BG006",
+        "BG009",
+        "BG010"
+      ],
+      "rationale": "No changes applied; the flagged hostPath, hostNetwork, and privileged capabilities are required for the eBPF agent to function correctly."
+    },
+    {
+      "attempt": 2,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [
+        "kube-linter"
+      ],
+      "blocking": [
+        "BG002",
+        "BG003",
+        "BG005",
+        "BG006",
+        "BG009",
+        "BG010"
+      ],
+      "rationale": "No changes made; required hostPath, hostNetwork, and capabilities must remain for functionality."
+    },
+    {
+      "attempt": 3,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [
+        "kube-linter"
+      ],
+      "blocking": [
+        "BG002",
+        "BG003",
+        "BG010"
+      ],
+      "rationale": "Added runAsNonRoot, runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true, dropped all capabilities except needed, set cpu requests, made hostPath mount readOnly to mitigate writable host mount."
+    }
+  ],
+  "intent_verdict": null,
+  "drift_codes": [],
+  "oracle": {
+    "verdict": "no_patch",
+    "failed": [],
+    "checks": 0
+  },
+  "last_candidate_oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 14
+  },
+  "final_yaml": null,
+  "last_candidate": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: ebpf-agent\n  namespace: kube-system\nspec:\n  selector:\n    matchLabels:\n      app: ebpf-agent\n  template:\n    metadata:\n      labels:\n        app: ebpf-agent\n    spec:\n      hostNetwork: true\n      automountServiceAccountToken: false\n      containers:\n        - name: agent\n          image: quay.io/cilium/hubble-relay:v1.16.3\n          resources:\n            limits: {cpu: \"1\", memory: 512Mi}\n            requests: {cpu: \"200m\", memory: \"256Mi\"}\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n            capabilities:\n              add: [\"NET_ADMIN\", \"SYS_ADMIN\", \"BPF\"]\n              drop: [\"ALL\"]\n          volumeMounts:\n            - name: bpffs\n              mountPath: /sys/fs/bpf\n              readOnly: true\n      volumes:\n        - name: bpffs\n          hostPath:\n            path: /sys/fs/bpf\n            type: DirectoryOrCreate",
+  "diff": "",
+  "timestamp": "2026-10-29T04:30:09+01:00"
+}

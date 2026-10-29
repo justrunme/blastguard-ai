@@ -1,0 +1,9 @@
+# CASE 16 (hostile/invalid): valid YAML that is not a Kubernetes object (docker-compose file, no apiVersion/kind).
+# EXPECTED: input rejected, UNRESOLVED/NOT_PROPOSED, no LLM call.
+version: "3.9"
+services:
+  web:
+    image: nginx:1.27.2
+    privileged: true
+    volumes:
+      - /:/host

@@ -1,0 +1,35 @@
+# CASE 04 (function-critical): eBPF network observability agent. It loads eBPF programs and edits node networking.
+# MUST KEEP WORKING: container 'agent' keeps privileged: true OR capabilities NET_ADMIN + SYS_ADMIN (+ BPF);
+# hostPath /sys/fs/bpf stays mounted at /sys/fs/bpf; hostNetwork: true.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ebpf-agent
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: ebpf-agent
+  template:
+    metadata:
+      labels:
+        app: ebpf-agent
+    spec:
+      hostNetwork: true
+      automountServiceAccountToken: false
+      containers:
+        - name: agent
+          image: quay.io/cilium/hubble-relay:v1.16.3
+          resources:
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN", "SYS_ADMIN", "BPF"]
+          volumeMounts:
+            - name: bpffs
+              mountPath: /sys/fs/bpf
+      volumes:
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+            type: DirectoryOrCreate

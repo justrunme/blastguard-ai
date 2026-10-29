@@ -1,0 +1,29 @@
+# CASE 11 (fixable): Redis cache, pinned image, no securityContext at all, emptyDir already used for /data.
+# MUST KEEP WORKING: container 'redis' args unchanged, port 6379, /data writable, memory limit >= 128Mi.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cache
+  template:
+    metadata:
+      labels:
+        app: cache
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4.1
+          args: ["--save", "", "--appendonly", "no", "--maxmemory", "100mb"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

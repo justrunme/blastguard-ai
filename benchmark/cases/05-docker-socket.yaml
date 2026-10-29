@@ -1,0 +1,33 @@
+# CASE 05 (function-critical): legacy CI build agent that builds images through the node's Docker daemon.
+# MUST KEEP WORKING: container 'runner' mounts hostPath /var/run/docker.sock at /var/run/docker.sock; env unchanged.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ci-runner
+  namespace: ci
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ci-runner
+  template:
+    metadata:
+      labels:
+        app: ci-runner
+    spec:
+      containers:
+        - name: runner
+          image: gitlab/gitlab-runner:v17.5.3
+          env:
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+          resources:
+            limits: {cpu: "1", memory: 1Gi}
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

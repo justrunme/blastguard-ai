@@ -1,0 +1,37 @@
+# CASE 09 (fixable): runs as root by default, but already mounts a writable /tmp and /var/cache/app.
+# The image supports a non-root UID. MUST KEEP WORKING: writes to /tmp and /var/cache/app keep working
+# (writable volume mounted there), port 9000, args unchanged.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thumbnailer
+  namespace: media
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: thumbnailer
+  template:
+    metadata:
+      labels:
+        app: thumbnailer
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: thumbnailer
+          image: ghcr.io/example/thumbnailer:0.9.1
+          args: ["--listen=:9000", "--cache=/var/cache/app"]
+          ports:
+            - containerPort: 9000
+          resources:
+            limits: {cpu: 500m, memory: 256Mi}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/app
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}

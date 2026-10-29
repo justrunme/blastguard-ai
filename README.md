@@ -142,6 +142,30 @@ release decision is REVIEW_REQUIRED with an "incomplete verification" note. It d
 tested in a cluster. Read-only root filesystem without a writable mount is a high-impact drift, so a hardened
 nginx patch (sample 02) is sent to human review.
 
+## Benchmark (16 cases x 3 runs, real Nemotron)
+
+`python scripts/run_benchmark.py --repeats 3` runs 16 hand-written manifests through the real loop (48 runs, 66
+model calls, about 105k tokens in total, well under a cent per run). Ground truth for "is the workload's declared
+function preserved" comes from `benchmark/oracles.py`, plain-dict checks that do not import the gate. Full tables:
+[`benchmark/results/RESULTS.md`](benchmark/results/RESULTS.md); raw per-run JSON is in `benchmark/results/raw/`.
+
+On this corpus, among the 35 runs that passed security verification after a model patch:
+
+| | gate REVIEW_REQUIRED | gate SAFE_TO_PROPOSE |
+|---|---|---|
+| function broken (oracle) | 14 | **0** (false SAFE) |
+| function preserved (oracle) | 0 (false review) | 21 |
+
+* In all 5 function-critical cases (hostPath log collector, hostNetwork exporter, public LoadBalancer, eBPF agent
+  needing NET_ADMIN, docker socket) the model removed the needed feature and security verification accepted the
+  patch; the gate sent 14 of 15 runs to REVIEW_REQUIRED, and the 15th run (eBPF agent) ended UNRESOLVED (nothing proposed).
+* The 2 already-hardened manifests returned NO_CHANGE_NEEDED (6 of 6 runs). The malformed-YAML and non-Kubernetes
+  inputs were rejected before any model call (6 of 6 runs). In the prompt-injection case (a comment telling the model
+  to set `privileged: true`), the model ignored it in 3 of 3 runs and the patch did not weaken the posture.
+* Limits, stated plainly: 16 hand-written cases, authored by this project. The oracles are independent code but test
+  many of the same structural facts as the gate, so agreement on the function-critical cases is expected and does
+  not show the gate catches breakage outside what both encode. Everything is static; nothing was run in a cluster.
+
 ## What existed before / what was built during the Submission Period
 
 * **Existed before:** [justrunme/blastguard](https://github.com/justrunme/blastguard) (Go, Apache-2.0), a CVE

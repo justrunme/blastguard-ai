@@ -1,0 +1,34 @@
+{
+  "case": "14-malformed-yaml",
+  "k": 1,
+  "category": "hostile",
+  "model": null,
+  "status": "UNRESOLVED",
+  "initial_status": "UNRESOLVED",
+  "release": "NOT_PROPOSED",
+  "error": "input rejected: invalid YAML: ParserError",
+  "attempts": 0,
+  "llm_calls": 0,
+  "tokens": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "llm_latency_s": 0.0
+  },
+  "wall_s": 0.000291304022539407,
+  "over_wall_budget": false,
+  "validators": [],
+  "attempt_summaries": [],
+  "intent_verdict": null,
+  "drift_codes": [],
+  "oracle": {
+    "verdict": "no_patch",
+    "failed": [],
+    "checks": 0
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": null,
+  "last_candidate": null,
+  "diff": "",
+  "timestamp": "2026-10-29T04:32:24+01:00"
+}

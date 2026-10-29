@@ -1,0 +1,45 @@
+# CASE 10 (fixable): Deployment + internal ClusterIP Service in one file, several hardening gaps.
+# MUST KEEP WORKING: Service 'catalog' (ClusterIP, port 80 -> 8080, same selector) still routes to the pods;
+# any added NetworkPolicy must still allow ingress on 8080 and egress (app calls a DB via DATABASE_HOST);
+# env unchanged, replicas 3.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+  namespace: shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: catalog
+  template:
+    metadata:
+      labels:
+        app: catalog
+    spec:
+      containers:
+        - name: catalog
+          image: ghcr.io/example/catalog:1.12.0
+          env:
+            - name: DATABASE_HOST
+              value: postgres.shop.svc.cluster.local
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog
+  namespace: shop
+spec:
+  selector:
+    app: catalog
+  ports:
+    - port: 80
+      targetPort: 8080

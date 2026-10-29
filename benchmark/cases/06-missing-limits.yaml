@@ -1,0 +1,35 @@
+# CASE 06 (fixable): otherwise hardened static web server, only resource limits missing.
+# MUST KEEP WORKING: container 'web' image nginxinc/nginx-unprivileged, port 8080, writable /tmp emptyDir,
+# replicas 2, memory limit not below 64Mi.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-web
+  namespace: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: static-web
+  template:
+    metadata:
+      labels:
+        app: static-web
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: web
+          image: nginxinc/nginx-unprivileged:1.27.2
+          ports:
+            - containerPort: 8080
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,68 @@
+{
+  "case": "06-missing-limits",
+  "k": 2,
+  "category": "fixable",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "SAFE_TO_PROPOSE",
+  "error": null,
+  "attempts": 2,
+  "llm_calls": 2,
+  "tokens": {
+    "prompt_tokens": 1975,
+    "completion_tokens": 826,
+    "total_tokens": 2801,
+    "llm_latency_s": 5.39
+  },
+  "wall_s": 5.66,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [
+        "kube-linter"
+      ],
+      "blocking": [],
+      "rationale": "Added CPU and memory limits to container web to satisfy BG007."
+    },
+    {
+      "attempt": 2,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added CPU and memory requests to satisfy kube-linter unset-cpu-requirements while keeping existing limits and all other settings unchanged."
+    }
+  ],
+  "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+  "drift_codes": [
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 13
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "# CASE 06 (fixable): otherwise hardened static web server, only resource limits missing.\n# MUST KEEP WORKING: container 'web' image nginxinc/nginx-unprivileged, port 8080, writable /tmp emptyDir,\n# replicas 2, memory limit not below 64Mi.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: static-web\n  namespace: web\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: static-web\n  template:\n    metadata:\n      labels:\n        app: static-web\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: nginxinc/nginx-unprivileged:1.27.2\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 101\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n          resources:\n            limits:\n              cpu: \"250m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"100m\"\n              memory: \"64Mi\"\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "last_candidate": "# CASE 06 (fixable): otherwise hardened static web server, only resource limits missing.\n# MUST KEEP WORKING: container 'web' image nginxinc/nginx-unprivileged, port 8080, writable /tmp emptyDir,\n# replicas 2, memory limit not below 64Mi.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: static-web\n  namespace: web\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: static-web\n  template:\n    metadata:\n      labels:\n        app: static-web\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: nginxinc/nginx-unprivileged:1.27.2\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 101\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n          resources:\n            limits:\n              cpu: \"250m\"\n              memory: \"128Mi\"\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -30,6 +30,13 @@\n           volumeMounts:\n             - name: tmp\n               mountPath: /tmp\n+          resources:\n+            limits:\n+              cpu: \"250m\"\n+              memory: \"128Mi\"\n+            requests:\n+              cpu: \"100m\"\n+              memory: \"64Mi\"\n       volumes:\n         - name: tmp\n-          emptyDir: {}\n+          emptyDir: {}",
+  "timestamp": "2026-10-29T04:30:52+01:00"
+}

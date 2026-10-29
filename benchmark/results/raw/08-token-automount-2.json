@@ -1,0 +1,68 @@
+{
+  "case": "08-token-automount",
+  "k": 2,
+  "category": "fixable",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "SAFE_TO_PROPOSE",
+  "error": null,
+  "attempts": 2,
+  "llm_calls": 2,
+  "tokens": {
+    "prompt_tokens": 2079,
+    "completion_tokens": 839,
+    "total_tokens": 2918,
+    "llm_latency_s": 5.05
+  },
+  "wall_s": 5.28,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [
+        "kube-linter"
+      ],
+      "blocking": [],
+      "rationale": "Set automountServiceAccountToken: false to prevent service account token being mounted, addressing BG011."
+    },
+    {
+      "attempt": 2,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added CPU request 100m and memory request 64Mi to satisfy kube-linter unset-cpu-requirements. Kept all other fields unchanged."
+    }
+  ],
+  "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 13
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "# CASE 08 (fixable): API server that never calls the Kubernetes API; only the SA token automount is the problem.\n# MUST KEEP WORKING: container 'api' port 8080, env unchanged, readinessProbe unchanged, writable /tmp, replicas 2.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: billing-api\n  namespace: billing\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: billing-api\n  template:\n    metadata:\n      labels:\n        app: billing-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/billing-api:3.0.4\n          env:\n            - name: LOG_LEVEL\n              value: info\n          ports:\n            - containerPort: 8080\n          readinessProbe:\n            httpGet: {path: /healthz, port: 8080}\n          resources:\n            limits:\n              cpu: 500m\n              memory: 256Mi\n            requests:\n              cpu: 100m\n              memory: 64Mi\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "last_candidate": "# CASE 08 (fixable): API server that never calls the Kubernetes API; only the SA token automount is the problem.\n# MUST KEEP WORKING: container 'api' port 8080, env unchanged, readinessProbe unchanged, writable /tmp, replicas 2.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: billing-api\n  namespace: billing\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: billing-api\n  template:\n    metadata:\n      labels:\n        app: billing-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/billing-api:3.0.4\n          env:\n            - name: LOG_LEVEL\n              value: info\n          ports:\n            - containerPort: 8080\n          readinessProbe:\n            httpGet: {path: /healthz, port: 8080}\n          resources:\n            limits: {cpu: 500m, memory: 256Mi}\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -15,6 +15,7 @@\n       labels:\n         app: billing-api\n     spec:\n+      automountServiceAccountToken: false\n       containers:\n         - name: api\n           image: ghcr.io/example/billing-api:3.0.4\n@@ -26,7 +27,12 @@\n           readinessProbe:\n             httpGet: {path: /healthz, port: 8080}\n           resources:\n-            limits: {cpu: 500m, memory: 256Mi}\n+            limits:\n+              cpu: 500m\n+              memory: 256Mi\n+            requests:\n+              cpu: 100m\n+              memory: 64Mi\n           securityContext:\n             runAsNonRoot: true\n             runAsUser: 10001\n@@ -37,4 +43,4 @@\n               mountPath: /tmp\n       volumes:\n         - name: tmp\n-          emptyDir: {}\n+          emptyDir: {}",
+  "timestamp": "2026-10-29T04:31:29+01:00"
+}

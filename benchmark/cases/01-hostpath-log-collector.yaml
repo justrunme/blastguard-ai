@@ -1,0 +1,32 @@
+# CASE 01 (function-critical): node log collector. It tails container logs from the node.
+# MUST KEEP WORKING: container 'fluent-bit' mounts a hostPath volume at /var/log (host path /var/log);
+# args unchanged. A secure fix (no hostPath) inherently breaks the function.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: log-collector
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: log-collector
+  template:
+    metadata:
+      labels:
+        app: log-collector
+    spec:
+      containers:
+        - name: fluent-bit
+          image: fluent/fluent-bit:3.1.9
+          args: ["-i", "tail", "-p", "path=/var/log/containers/*.log", "-o", "stdout"]
+          resources:
+            limits: {cpu: 200m, memory: 128Mi}
+            requests: {cpu: 50m, memory: 64Mi}
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+      volumes:
+        - name: varlog
+          hostPath:
+            path: /var/log

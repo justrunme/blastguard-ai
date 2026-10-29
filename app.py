@@ -17,8 +17,9 @@ SESSION_RUN_CAP = int(os.environ.get("BLASTGUARD_SESSION_RUN_CAP", "10"))
 GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "1500"))
 SAMPLES = {p.stem: p.read_text() for p in sorted((Path(__file__).parent / "samples").glob("*.yaml"))}
 COLORS = {"BLOCKED": "#e5484d", "VERIFIED": "#30a46c", "UNRESOLVED": "#f5a524",
-          "SAFE_TO_PROPOSE": "#30a46c", "REVIEW_REQUIRED": "#f5a524", "NOT_PROPOSED": "#e5484d"}
+          "SAFE_TO_PROPOSE": "#30a46c", "NO_CHANGE_NEEDED": "#30a46c", "REVIEW_REQUIRED": "#f5a524", "NOT_PROPOSED": "#e5484d"}
 RELEASE_TEXT = {
+    "NO_CHANGE_NEEDED": "The manifest already passes every policy check and external validator. No patch was needed.",
     "SAFE_TO_PROPOSE": "Security verified and no high-impact static drift detected. Cluster behaviour is still not proven.",
     "REVIEW_REQUIRED": "Security passed, but the patch changes what the workload does. A human must review before it ships.",
     "NOT_PROPOSED": "No patch passed verification, so nothing is proposed.",

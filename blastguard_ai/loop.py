@@ -55,6 +55,10 @@ class RunResult:
         """Final decision: security status AND intent preservation."""
         if self.status != VERIFIED:
             return "NOT_PROPOSED" if self.status == UNRESOLVED else "BLOCKED"
+        if not self.attempts:
+            # Already clean on input: nothing was patched, so there is nothing to propose.
+            ok = bool(self.validators_initial) and all(v.get("status") == "pass" for v in self.validators_initial)
+            return "NO_CHANGE_NEEDED" if ok else "REVIEW_REQUIRED"
         if self.intent is None or self.intent["verdict"] == REVIEW_REQUIRED:
             return "REVIEW_REQUIRED"
         if not self.validators_complete:
@@ -65,14 +69,14 @@ class RunResult:
     def validators_complete(self) -> bool:
         """True only if every external validator ran and passed on the accepted patch (fail closed)."""
         if not self.attempts:
-            return False
+            return bool(self.validators_initial) and all(v.get("status") == "pass" for v in self.validators_initial)
         vals = (self.attempts[-1].get("verification") or {}).get("validators") or []
         return bool(vals) and all(v.get("status") == "pass" for v in vals)
 
     @property
     def release_note(self) -> str:
-        if self.status == VERIFIED and self.release == "REVIEW_REQUIRED" and \
-                self.intent is not None and self.intent["verdict"] != REVIEW_REQUIRED and not self.validators_complete:
+        if self.status == VERIFIED and self.release == "REVIEW_REQUIRED" and not self.validators_complete and \
+                (not self.attempts or (self.intent is not None and self.intent["verdict"] != REVIEW_REQUIRED)):
             return ("Incomplete verification: an external validator (kubeconform or kube-linter) did not run or "
                     "did not pass, so this cannot be marked safe to propose. A human must review.")
         return ""

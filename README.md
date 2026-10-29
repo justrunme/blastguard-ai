@@ -175,19 +175,6 @@ On this corpus, among the 35 runs that passed security verification after a mode
   guard, validator integration, Nemotron/Token Factory client, evidence reports, Streamlit UI, sample manifests,
   tests, docs.
 
-## Limitations
-
-* Static manifest analysis only: no admission control, no runtime, no cluster access, no Helm/Kustomize rendering.
-* The rule set is intentionally small; passing it does not make a workload secure.
-* Pinned image tags are chosen by the model; BlastGuard AI does not check that the tag exists in the registry.
-  Review the diff (e.g. `readOnlyRootFilesystem: true` may need writable `emptyDir` mounts for the app to start).
-* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster.
-* CVE/exposure decisions from the original BlastGuard are not wired in yet.
-
-## License
-
-Apache-2.0. Copyright Andrey Lesnikov.
-
 ## A/B counterfactual and Runtime Proof (kind)
 
 **A/B (no new model calls).** Re-reading the 35 saved benchmark runs that reached VERIFIED after a model patch, a
@@ -225,3 +212,16 @@ is left as published: by the oracles those 13 are false alarms.
 So the oracles were too lax, not the gate, for at least those 6 runs, and the gate gave generic reasons rather than
 naming the exact failure. Limits: post-hoc, one author, a small corpus, static oracles for the rest, and the audit
 judged the nginx container alone because the sidecar image in the case is fictional.
+
+## Limitations
+
+* Static manifest analysis only: no admission control, no runtime, no cluster access, no Helm/Kustomize rendering.
+* The rule set is intentionally small; passing it does not make a workload secure.
+* Pinned image tags are chosen by the model; BlastGuard AI does not check that the tag exists in the registry.
+  Review the diff (e.g. `readOnlyRootFilesystem: true` may need writable `emptyDir` mounts for the app to start).
+* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster.
+* CVE/exposure decisions from the original BlastGuard are not wired in yet.
+
+## License
+
+Apache-2.0. Copyright Andrey Lesnikov.

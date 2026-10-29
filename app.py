@@ -16,7 +16,14 @@ from blastguard_ai.report import to_json, to_markdown
 SESSION_RUN_CAP = int(os.environ.get("BLASTGUARD_SESSION_RUN_CAP", "5"))
 GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "400"))
 SAMPLES = {p.stem: p.read_text() for p in sorted((Path(__file__).parent / "samples").glob("*.yaml"))}
-COLORS = {"BLOCKED": "#e5484d", "VERIFIED": "#30a46c", "UNRESOLVED": "#f5a524"}
+COLORS = {"BLOCKED": "#e5484d", "VERIFIED": "#30a46c", "UNRESOLVED": "#f5a524",
+          "SAFE_TO_PROPOSE": "#30a46c", "REVIEW_REQUIRED": "#f5a524", "NOT_PROPOSED": "#e5484d"}
+RELEASE_TEXT = {
+    "SAFE_TO_PROPOSE": "Security verified and no high-impact static drift detected. Cluster behaviour is still not proven.",
+    "REVIEW_REQUIRED": "Security passed, but the patch changes what the workload does. A human must review before it ships.",
+    "NOT_PROPOSED": "No patch passed verification, so nothing is proposed.",
+    "BLOCKED": "Findings remain and no remediation was run.",
+}
 SEV = {"critical": "🟥", "high": "🟧", "medium": "🟨", "info": "🟦"}
 
 st.set_page_config(page_title="BlastGuard AI", page_icon="🛡️", layout="wide")
@@ -57,7 +64,7 @@ def badge(status: str) -> str:
 
 st.markdown('<div class="bg-hero"><h1>🛡️ BlastGuard AI</h1><p>Autonomous Kubernetes security remediation: '
             'deterministic checks find the risk, NVIDIA Nemotron proposes the fix, independent verifiers '
-            'decide whether it ships.</p></div>', unsafe_allow_html=True)
+            'decide whether it ships. An intent gate flags patches that are secure but change what the app does.</p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("Run settings")
@@ -120,6 +127,8 @@ if res:
     t = res.totals()
     st.markdown(f'{badge(res.initial_status)}<span class="bg-arrow">→</span>{badge(res.status)}',
                 unsafe_allow_html=True)
+    st.markdown(f'**Release decision:** {badge(res.release)}', unsafe_allow_html=True)
+    st.caption(RELEASE_TEXT[res.release])
     m = st.columns(5)
     m[0].metric("Initial findings", len([f for f in res.initial_findings if f["blocking"]]))
     last = res.attempts[-1].get("verification", {}) if res.attempts else {}
@@ -130,7 +139,7 @@ if res:
     if res.error:
         st.warning(res.error)
 
-    tabs = st.tabs(["Findings", "Diff", "Attempts", "Evidence report"])
+    tabs = st.tabs(["Findings", "Diff", "Intent gate", "Attempts", "Evidence report"])
     with tabs[0]:
         st.dataframe([{"": SEV[f["severity"]], **{k: f[k] for k in ("rule_id", "severity", "object", "container",
                                                                     "message")}} for f in res.initial_findings],
@@ -152,6 +161,14 @@ if res:
         else:
             st.info("No patch to show.")
     with tabs[2]:
+        if res.intent is None:
+            st.info("The Intent Preservation Gate runs on a patch that passed security verification.")
+        else:
+            (st.warning if res.intent["verdict"] == "REVIEW_REQUIRED" else st.success)(
+                f"{res.intent['verdict']}: {res.intent['note']}")
+            if res.intent["drifts"]:
+                st.dataframe(res.intent["drifts"], use_container_width=True, hide_index=True)
+    with tabs[3]:
         for at in res.attempts:
             v = at.get("verification", {})
             ok = v.get("ok")
@@ -175,7 +192,7 @@ if res:
                 if at.get("rationale"):
                     st.markdown("**Model rationale**")
                     st.text(at["rationale"])
-    with tabs[3]:
+    with tabs[4]:
         src = st.session_state.get("source", "input")
         md = to_markdown(res, src)
         c1, c2 = st.columns(2)

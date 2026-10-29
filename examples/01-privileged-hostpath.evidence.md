@@ -3,7 +3,8 @@
 - Source: `01-privileged-hostpath.yaml`
 - Model: `nvidia/nemotron-3-super-120b-a12b`
 - Status: **BLOCKED -> VERIFIED**
-- Attempts: 1  |  Wall time: 4.82s  |  Tokens: 1649 (prompt 1148, completion 501)
+- Attempts: 1  |  Wall time: 3.74s  |  Tokens: 1635 (prompt 1148, completion 487)
+- Release decision: **REVIEW_REQUIRED**
 
 ## Initial findings
 
@@ -23,14 +24,28 @@
 Initial validators: kubeconform=pass, kube-linter=fail
 
 ## Attempt 1
-- Channel: tool_call  |  LLM latency: 4.66s  |  tokens: 1649
+- Channel: tool_call  |  LLM latency: 3.56s  |  tokens: 1635
 - Verification: PASS
 - Remaining blocking findings: 0
 - kubeconform: pass
 - kube-linter: pass
 - Model rationale:
 
-> Removed privileged, hostPID, hostPath replaced with emptyDir, set automountServiceAccountToken false, added securityContext with runAsNonRoot, non-zero user, no privilege escalation, readOnly rootfs, dropped all capabilities, added resource limits/requests.
+> Replaced hostPath with emptyDir, disabled hostPID, removed privileged flag, dropped SYS_ADMIN capability, set runAsNonRoot true with non-zero UID, set allowPrivilegeEscalation false, readOnlyRootFilesystem true, added automountServiceAccountToken false, added CPU/memory requests and limits.
+
+## Intent Preservation Gate
+
+Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload does. Review before proposing.
+
+| Severity | Code | Object | What changed |
+|---|---|---|---|
+| high | HOSTPATH_REPLACED | DaemonSet/observability/log-collector | hostPath volume 'host-root' (/) was replaced by emptyDir: the workload no longer sees the host files it was mounted to read or write |
+| medium | HOSTPID_REMOVED | DaemonSet/observability/log-collector | hostPID was turned off: the workload no longer sees host processes/IPC |
+| medium | SA_TOKEN_DISABLED | DaemonSet/observability/log-collector | service account token is no longer mounted: breaks the app if it calls the Kubernetes API |
+| high | PRIVILEGED_REMOVED | DaemonSet/observability/log-collector container 'collector' | privileged mode was removed: anything needing device or kernel access will fail |
+| medium | CAPABILITIES_REMOVED | DaemonSet/observability/log-collector container 'collector' | capabilities no longer added: ['SYS_ADMIN'] |
+| medium | USER_CHANGED | DaemonSet/observability/log-collector container 'collector' | now runs as non-root (runAsUser 1000): the image must support that user |
+| info | LIMITS_ADDED | DaemonSet/observability/log-collector container 'collector' | resource limits added: too-low values cause OOMKills or CPU throttling |
 
 ## Verified diff
 
@@ -42,11 +57,12 @@ Initial validators: kubeconform=pass, kube-linter=fail
  apiVersion: apps/v1
  kind: DaemonSet
  metadata:
-@@ -13,18 +12,28 @@
+@@ -13,18 +12,29 @@
        labels:
          app: log-collector
      spec:
 -      hostPID: true
++      hostPID: false
 +      automountServiceAccountToken: false
        containers:
          - name: collector
@@ -65,12 +81,12 @@ Initial validators: kubeconform=pass, kube-linter=fail
              - name: host-root
                mountPath: /host
 +          resources:
-+            limits:
-+              cpu: "500m"
-+              memory: "256Mi"
 +            requests:
-+              cpu: "200m"
++              cpu: "100m"
 +              memory: "128Mi"
++            limits:
++              cpu: "200m"
++              memory: "256Mi"
        volumes:
          - name: host-root
 -          hostPath:

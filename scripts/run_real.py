@@ -41,7 +41,7 @@ def main() -> int:
         (out / f"{p.stem}.evidence.json").write_text(to_json(res, p.name))
         (out / f"{p.stem}.evidence.md").write_text(to_markdown(res, p.name))
         summary.append({"sample": p.name, "initial": res.initial_status, "final": res.status,
-                        "attempts": len(res.attempts), "error": res.error, **res.totals(), "wall_s": res.wall_s})
+                        "attempts": len(res.attempts), "release": res.release, "error": res.error, **res.totals(), "wall_s": res.wall_s})
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary, indent=2))
     return 0

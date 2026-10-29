@@ -3,7 +3,8 @@
 - Source: `03-loadbalancer-exposed.yaml`
 - Model: `nvidia/nemotron-3-super-120b-a12b`
 - Status: **BLOCKED -> VERIFIED**
-- Attempts: 1  |  Wall time: 3.98s  |  Tokens: 1582 (prompt 1083, completion 499)
+- Attempts: 1  |  Wall time: 2.79s  |  Tokens: 1547 (prompt 1083, completion 464)
+- Release decision: **REVIEW_REQUIRED**
 
 ## Initial findings
 
@@ -22,14 +23,28 @@
 Initial validators: kubeconform=pass, kube-linter=fail
 
 ## Attempt 1
-- Channel: tool_call  |  LLM latency: 3.77s  |  tokens: 1582
+- Channel: tool_call  |  LLM latency: 2.63s  |  tokens: 1547
 - Verification: PASS
 - Remaining blocking findings: 0
 - kubeconform: pass
 - kube-linter: pass
 - Model rationale:
 
-> Fixed hostNetwork, automountServiceAccountToken, added securityContext (runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem), added CPU/memory limits/requests, pinned image tag, changed Service type to ClusterIP.
+> Disabled hostNetwork, set automountServiceAccountToken false, added securityContext (runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem), added CPU/Memory limits/requests, pinned image tag, changed Service type to ClusterIP.
+
+## Intent Preservation Gate
+
+Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload does. Review before proposing.
+
+| Severity | Code | Object | What changed |
+|---|---|---|---|
+| high | HOSTNETWORK_REMOVED | Deployment/internal/admin-panel | hostNetwork was turned off: node IP and host ports are no longer used by the workload |
+| medium | SA_TOKEN_DISABLED | Deployment/internal/admin-panel | service account token is no longer mounted: breaks the app if it calls the Kubernetes API |
+| medium | IMAGE_TAG_CHANGED | Deployment/internal/admin-panel container 'web' | image tag changed latest -> v1.0.0: behaviour depends on what that tag contains |
+| medium | USER_CHANGED | Deployment/internal/admin-panel container 'web' | now runs as non-root (runAsUser 1000): the image must support that user |
+| medium | ROOTFS_READONLY_NO_WRITABLE_PATH | Deployment/internal/admin-panel container 'web' | root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash |
+| info | LIMITS_ADDED | Deployment/internal/admin-panel container 'web' | resource limits added: too-low values cause OOMKills or CPU throttling |
+| high | SERVICE_EXPOSURE_CHANGED | Service/internal/admin-panel | Service type LoadBalancer -> ClusterIP: clients outside the cluster can no longer reach it |
 
 ## Verified diff
 
@@ -56,11 +71,11 @@ Initial validators: kubeconform=pass, kube-linter=fail
 +            readOnlyRootFilesystem: true
 +          resources:
 +            limits:
-+              cpu: "100m"
-+              memory: "128Mi"
++              cpu: 500m
++              memory: 256Mi
 +            requests:
-+              cpu: "50m"
-+              memory: "64Mi"
++              cpu: 250m
++              memory: 128Mi
  ---
  apiVersion: v1
  kind: Service

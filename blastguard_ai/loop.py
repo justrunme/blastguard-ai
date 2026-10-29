@@ -11,6 +11,7 @@ from typing import Callable, Protocol
 from . import validators
 from .checks import blocking, run_checks
 from .guard import identity_violations
+from .intent import REVIEW_REQUIRED, intent_report
 from .llm import LLMError, Proposal
 from .manifest import ManifestError, parse_manifest
 
@@ -40,6 +41,7 @@ class RunResult:
     wall_s: float = 0.0
     events: list[str] = field(default_factory=list)
     last_candidate: str | None = None
+    intent: dict | None = None
 
     @property
     def diff(self) -> str:
@@ -47,6 +49,15 @@ class RunResult:
             return ""
         return "".join(difflib.unified_diff(self.original_yaml.splitlines(True), self.final_yaml.splitlines(True),
                                             "original.yaml", "patched.yaml"))
+
+    @property
+    def release(self) -> str:
+        """Final decision: security status AND intent preservation."""
+        if self.status != VERIFIED:
+            return "NOT_PROPOSED" if self.status == UNRESOLVED else "BLOCKED"
+        if self.intent and self.intent["verdict"] == REVIEW_REQUIRED:
+            return "REVIEW_REQUIRED"
+        return "SAFE_TO_PROPOSE"
 
     def totals(self) -> dict:
         t = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "llm_latency_s": 0.0}
@@ -158,6 +169,8 @@ def run_remediation(manifest_text, client: PatchClient | None, max_attempts: int
                     f"(blocking={nb}, guard={len(v['guard'])}, parse_error={v['parse_error']})")
                 if v["ok"]:
                     res.status, res.final_yaml = VERIFIED, p.patched_yaml
+                    res.intent = intent_report(docs, parse_manifest(p.patched_yaml))
+                    log(f"Intent gate: {res.intent['verdict']} ({len(res.intent['drifts'])} drifts)")
                     break
                 feedback = _feedback(v)
                 if not v["parse_error"] and not v["guard"]:

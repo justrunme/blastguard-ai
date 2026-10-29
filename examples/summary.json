@@ -4,35 +4,38 @@
     "initial": "BLOCKED",
     "final": "VERIFIED",
     "attempts": 1,
+    "release": "REVIEW_REQUIRED",
     "error": null,
     "prompt_tokens": 1148,
-    "completion_tokens": 501,
-    "total_tokens": 1649,
-    "llm_latency_s": 4.66,
-    "wall_s": 4.82
+    "completion_tokens": 487,
+    "total_tokens": 1635,
+    "llm_latency_s": 3.56,
+    "wall_s": 3.74
   },
   {
     "sample": "02-latest-root-nolimits.yaml",
     "initial": "BLOCKED",
     "final": "VERIFIED",
     "attempts": 1,
+    "release": "SAFE_TO_PROPOSE",
     "error": null,
     "prompt_tokens": 997,
-    "completion_tokens": 406,
-    "total_tokens": 1403,
-    "llm_latency_s": 2.74,
-    "wall_s": 2.91
+    "completion_tokens": 414,
+    "total_tokens": 1411,
+    "llm_latency_s": 2.24,
+    "wall_s": 2.39
   },
   {
     "sample": "03-loadbalancer-exposed.yaml",
     "initial": "BLOCKED",
     "final": "VERIFIED",
     "attempts": 1,
+    "release": "REVIEW_REQUIRED",
     "error": null,
     "prompt_tokens": 1083,
-    "completion_tokens": 499,
-    "total_tokens": 1582,
-    "llm_latency_s": 3.77,
-    "wall_s": 3.98
+    "completion_tokens": 464,
+    "total_tokens": 1547,
+    "llm_latency_s": 2.63,
+    "wall_s": 2.79
   }
 ]

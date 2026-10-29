@@ -16,7 +16,7 @@ def to_dict(res: RunResult, source: str = "") -> dict:
         "initial_status": res.initial_status, "final_status": res.status, "error": res.error,
         "initial_findings": res.initial_findings, "validators_initial": res.validators_initial,
         "attempts": res.attempts, "totals": res.totals(), "wall_s": res.wall_s,
-        "diff": res.diff, "final_yaml": res.final_yaml, "last_unverified_candidate": res.last_candidate,
+        "release": res.release, "intent": res.intent, "diff": res.diff, "final_yaml": res.final_yaml, "last_unverified_candidate": res.last_candidate,
         "events": res.events,
     }
 
@@ -33,6 +33,7 @@ def to_markdown(res: RunResult, source: str = "") -> str:
              f"- Status: **{res.initial_status} -> {res.status}**",
              f"- Attempts: {len(res.attempts)}  |  Wall time: {res.wall_s}s  |  "
              f"Tokens: {t['total_tokens']} (prompt {t['prompt_tokens']}, completion {t['completion_tokens']})"]
+    lines.append(f"- Release decision: **{res.release}**")
     if res.error:
         lines.append(f"- Error: {res.error}")
     lines += ["", "## Initial findings", "", "| Rule | Severity | Object | Container | Message |", "|---|---|---|---|---|"]
@@ -61,6 +62,12 @@ def to_markdown(res: RunResult, source: str = "") -> str:
             lines.append(f"- {val['name']}: {val['status']}" + (f" ({len(val['issues'])} issues)" if val['issues'] else ""))
         if a.get("rationale"):
             lines += ["- Model rationale:", "", "> " + a["rationale"].replace("\n", "\n> ")]
+    if res.intent:
+        lines += ["", "## Intent Preservation Gate", "", f"Verdict: **{res.intent['verdict']}**. {res.intent['note']}"]
+        if res.intent["drifts"]:
+            lines += ["", "| Severity | Code | Object | What changed |", "|---|---|---|---|"]
+            lines += [f"| {x['severity']} | {x['code']} | {x['object']} | {x['detail']} |"
+                      for x in res.intent["drifts"]]
     if res.diff:
         lines += ["", "## Verified diff", "", "```diff", res.diff.rstrip(), "```"]
     return "\n".join(lines) + "\n"

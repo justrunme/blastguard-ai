@@ -9,6 +9,13 @@ Paste a risky Kubernetes manifest. Deterministic checks find the security proble
 Nebius Token Factory) proposes a patched manifest, and independent verifiers decide whether the patch is accepted.
 Up to 3 attempts, then a clear verdict: **BLOCKED → VERIFIED** or **UNRESOLVED**, with a diff and an evidence report.
 
+New in the Submission Period: the **Intent Preservation Gate**. A patch can be secure and still break production, so
+after security verification BlastGuard AI compares the patch with the original and reports what changed in what
+the workload *does* (hostPath → emptyDir, LoadBalancer → ClusterIP, removed command/env/ports, ...). Result:
+**SAFE_TO_PROPOSE** or **REVIEW_REQUIRED** ("security passed, but a human must review before it ships").
+
+> BlastGuard AI: because a secure patch can still break production.
+
 ## Why
 
 Security scanners tell you what is wrong; someone still has to write the fix, and LLM-written fixes are not
@@ -56,6 +63,13 @@ flowchart LR
 * **Identity guard** (`guard.py`): the patch may not delete/rename objects, remove containers, change the image
   repository (only the tag), scale to 0, or add objects other than NetworkPolicy/ServiceAccount. This stops the
   model from "fixing" a workload by deleting it.
+* **Intent Preservation Gate** (`intent.py`): structural comparison of original vs. accepted patch. *High*
+  drifts (gate the release decision): hostPath removed/replaced/changed, hostNetwork or privileged removed,
+  Service exposure/selector/ports changed, command/args/env/probes changed or removed, container ports or mounts
+  removed, replicas, serviceAccountName, nodeSelector, tolerations or affinity changed. *Medium/info* drifts are
+  listed but do not gate (image tag change, non-root user, read-only root filesystem without a writable mount,
+  dropped capabilities, hostPID/IPC, service account token, resource limits added). It is a static heuristic: it
+  cannot prove a workload still works. If the gate itself errors, it fails closed to REVIEW_REQUIRED.
 * **External validators** (optional, auto-detected in `./bin` or `PATH`): `kubeconform` v0.8.0 (schema validation,
   `-strict`) and `kube-linter` v0.8.3 (a security subset of its checks). If installed, a `fail` from either blocks
   VERIFIED. Their status (`pass`/`fail`/`error`/`not_installed`) is recorded per attempt in the evidence report.
@@ -109,19 +123,19 @@ fix rates applies only to those samples ("on this corpus").
 On this corpus (3 intentionally dangerous manifests, model `nvidia/nemotron-3-super-120b-a12b` through Token
 Factory, `submit_patch` tool call on every attempt):
 
-| Sample | Blocking findings before | Result | Attempts | Tokens | Wall time |
-|---|---|---|---|---|---|
-| 01-privileged-hostpath | 9 | VERIFIED | 1 | 1649 | 4.8 s |
-| 02-latest-root-nolimits | 6 | VERIFIED | 1 | 1403 | 2.9 s |
-| 03-loadbalancer-exposed | 8 | VERIFIED | 1 | 1582 | 4.0 s |
+| Sample | Blocking findings before | Security result | Release decision (Intent Gate) | High-impact drifts | Attempts | Tokens |
+|---|---|---|---|---|---|---|
+| 01-privileged-hostpath | 9 | VERIFIED | **REVIEW_REQUIRED** | `hostPath: /` replaced by `emptyDir`; privileged removed | 1 | see `examples/summary.json` |
+| 02-latest-root-nolimits | 6 | VERIFIED | SAFE_TO_PROPOSE (no high-impact static drift) | none (image tag `latest` → pinned, non-root, limits are medium/info) | 1 | |
+| 03-loadbalancer-exposed | 8 | VERIFIED | **REVIEW_REQUIRED** | `LoadBalancer` → `ClusterIP`; hostNetwork removed | 1 | |
 
-All three passed on the first attempt, so the retry path (feedback to the model after a failed verification) was
-not exercised against the real model on this corpus; it is covered only by the fake-client tests. Three samples
-is a smoke test, not an evaluation.
+All three passed security verification on the first attempt, so the retry path (feedback to the model after a failed
+verification) was not exercised against the real model on this corpus; it is covered only by the fake-client tests.
+Three samples is a smoke test, not an evaluation. "SAFE_TO_PROPOSE" means no high-impact *static* drift was found,
+not that the workload was tested in a cluster. The second and third real runs reproduced the same verdicts.
 
-Important caveat: VERIFIED means the patch passes the security checks, not that the workload still works. In
-sample 01 the model replaced `hostPath: /` with an `emptyDir`, which is safe but would break a real log collector.
-Always review the diff.
+The point of the gate: in sample 01 the model's patch is secure but would break a real log collector. Without the
+gate that run would be reported as a plain success.
 
 ## What existed before / what was built during the Submission Period
 
@@ -138,7 +152,7 @@ Always review the diff.
 * The rule set is intentionally small; passing it does not make a workload secure.
 * Pinned image tags are chosen by the model; BlastGuard AI does not check that the tag exists in the registry.
   Review the diff (e.g. `readOnlyRootFilesystem: true` may need writable `emptyDir` mounts for the app to start).
-* VERIFIED means "passed these checks", not "tested in a cluster".
+* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster.
 * CVE/exposure decisions from the original BlastGuard are not wired in yet.
 
 ## License

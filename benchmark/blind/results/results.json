@@ -1,0 +1,1368 @@
+{
+  "summary": {
+    "n_runs": 18,
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "matrix": {
+      "TRUE_REVIEW": 0,
+      "FALSE_SAFE": 0,
+      "FALSE_REVIEW": 13,
+      "TRUE_SAFE": 5
+    },
+    "n_matrix": 18,
+    "status_counts": {
+      "VERIFIED": 18
+    },
+    "release_counts": {
+      "SAFE_TO_PROPOSE": 5,
+      "REVIEW_REQUIRED": 13
+    },
+    "harness_errors": 0,
+    "api_errors": 0,
+    "llm_calls": 24,
+    "retries": 6,
+    "tokens_total": 46028,
+    "prompt_tokens": 29993,
+    "completion_tokens": 16035,
+    "tokens_median": 2067.0,
+    "tokens_max": 5516,
+    "wall_median": 4.405,
+    "wall_max": 11.99,
+    "over_wall_budget": 0
+  },
+  "per_case": [
+    {
+      "id": "b01-postgres-statefulset",
+      "category": "blind",
+      "n": 3,
+      "status": [
+        "VERIFIED",
+        "VERIFIED",
+        "VERIFIED"
+      ],
+      "release": [
+        "SAFE_TO_PROPOSE",
+        "REVIEW_REQUIRED",
+        "SAFE_TO_PROPOSE"
+      ],
+      "oracle": [
+        "preserved",
+        "preserved",
+        "preserved"
+      ],
+      "cells": [
+        "TRUE_SAFE",
+        "FALSE_REVIEW",
+        "TRUE_SAFE"
+      ],
+      "attempts": [
+        1,
+        1,
+        1
+      ],
+      "drifts": [
+        "LIMITS_ADDED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED"
+      ],
+      "oracle_failed": []
+    },
+    {
+      "id": "b02-legacy-dns-client",
+      "category": "blind",
+      "n": 3,
+      "status": [
+        "VERIFIED",
+        "VERIFIED",
+        "VERIFIED"
+      ],
+      "release": [
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED"
+      ],
+      "oracle": [
+        "preserved",
+        "preserved",
+        "preserved"
+      ],
+      "cells": [
+        "FALSE_REVIEW",
+        "FALSE_REVIEW",
+        "FALSE_REVIEW"
+      ],
+      "attempts": [
+        2,
+        1,
+        2
+      ],
+      "drifts": [
+        "IMAGE_TAG_CHANGED",
+        "LIMITS_ADDED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED"
+      ],
+      "oracle_failed": []
+    },
+    {
+      "id": "b03-nginx-reloader-sidecar",
+      "category": "blind",
+      "n": 3,
+      "status": [
+        "VERIFIED",
+        "VERIFIED",
+        "VERIFIED"
+      ],
+      "release": [
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED"
+      ],
+      "oracle": [
+        "preserved",
+        "preserved",
+        "preserved"
+      ],
+      "cells": [
+        "FALSE_REVIEW",
+        "FALSE_REVIEW",
+        "FALSE_REVIEW"
+      ],
+      "attempts": [
+        1,
+        1,
+        1
+      ],
+      "drifts": [
+        "LIMITS_ADDED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED"
+      ],
+      "oracle_failed": []
+    },
+    {
+      "id": "b04-gpu-inference-initmodel",
+      "category": "blind",
+      "n": 3,
+      "status": [
+        "VERIFIED",
+        "VERIFIED",
+        "VERIFIED"
+      ],
+      "release": [
+        "SAFE_TO_PROPOSE",
+        "SAFE_TO_PROPOSE",
+        "SAFE_TO_PROPOSE"
+      ],
+      "oracle": [
+        "preserved",
+        "preserved",
+        "preserved"
+      ],
+      "cells": [
+        "TRUE_SAFE",
+        "TRUE_SAFE",
+        "TRUE_SAFE"
+      ],
+      "attempts": [
+        1,
+        1,
+        1
+      ],
+      "drifts": [
+        "LIMITS_ADDED",
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED"
+      ],
+      "oracle_failed": []
+    },
+    {
+      "id": "b05-janitor-cronjob",
+      "category": "blind",
+      "n": 3,
+      "status": [
+        "VERIFIED",
+        "VERIFIED",
+        "VERIFIED"
+      ],
+      "release": [
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED"
+      ],
+      "oracle": [
+        "preserved",
+        "preserved",
+        "preserved"
+      ],
+      "cells": [
+        "FALSE_REVIEW",
+        "FALSE_REVIEW",
+        "FALSE_REVIEW"
+      ],
+      "attempts": [
+        3,
+        1,
+        2
+      ],
+      "drifts": [
+        "LIMITS_ADDED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED"
+      ],
+      "oracle_failed": []
+    },
+    {
+      "id": "b06-jvm-billing-service",
+      "category": "blind",
+      "n": 3,
+      "status": [
+        "VERIFIED",
+        "VERIFIED",
+        "VERIFIED"
+      ],
+      "release": [
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED",
+        "REVIEW_REQUIRED"
+      ],
+      "oracle": [
+        "preserved",
+        "preserved",
+        "preserved"
+      ],
+      "cells": [
+        "FALSE_REVIEW",
+        "FALSE_REVIEW",
+        "FALSE_REVIEW"
+      ],
+      "attempts": [
+        2,
+        1,
+        1
+      ],
+      "drifts": [
+        "LIMITS_ADDED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED"
+      ],
+      "oracle_failed": []
+    }
+  ],
+  "runs": [
+    {
+      "case": "b01-postgres-statefulset",
+      "k": 1,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "SAFE_TO_PROPOSE",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1253,
+        "completion_tokens": 721,
+        "total_tokens": 1974,
+        "llm_latency_s": 5.56
+      },
+      "wall_s": 5.84,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, set runAsUser/fsGroup to 999 and runAsNonRoot true, set allowPrivilegeEscalation false, added readOnlyRootFilesystem true with emptyDir mounts for /var/run/postgresql and /tmp, added CPU/memory requests and limits (memory >=512Mi)."
+        }
+      ],
+      "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 13
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:13+01:00",
+      "cell": "TRUE_SAFE"
+    },
+    {
+      "case": "b01-postgres-statefulset",
+      "k": 2,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1253,
+        "completion_tokens": 764,
+        "total_tokens": 2017,
+        "llm_latency_s": 4.75
+      },
+      "wall_s": 4.87,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "error"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, set runAsNonRoot true with runAsUser 999, allowPrivilegeEscalation false, readOnlyRootFilesystem true, added emptyDir volumes for /var/run/postgresql and /tmp, added CPU/memory limits and requests."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 13
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:18+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b01-postgres-statefulset",
+      "k": 3,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "SAFE_TO_PROPOSE",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1253,
+        "completion_tokens": 661,
+        "total_tokens": 1914,
+        "llm_latency_s": 3.52
+      },
+      "wall_s": 3.69,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, set runAsUser/fsGroup to 999 and runAsNonRoot true, set allowPrivilegeEscalation false, added readOnlyRootFilesystem true with emptyDir mounts for /var/run/postgresql and /tmp, added CPU/Memory limits and requests meeting minimum memory."
+        }
+      ],
+      "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 13
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:22+01:00",
+      "cell": "TRUE_SAFE"
+    },
+    {
+      "case": "b02-legacy-dns-client",
+      "k": 1,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 2,
+      "llm_calls": 2,
+      "tokens": {
+        "prompt_tokens": 2481,
+        "completion_tokens": 991,
+        "total_tokens": 3472,
+        "llm_latency_s": 5.68
+      },
+      "wall_s": 5.95,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [
+            "kubeconform"
+          ],
+          "blocking": [
+            "BG011"
+          ],
+          "rationale": "Fixed findings: set automountServiceAccountToken false, changed container to runAsNonRoot with non-zero user, set allowPrivilegeEscalation false and readOnlyRootFilesystem true, added CPU/memory limits/requests, pinned image tag to v1.2.3."
+        },
+        {
+          "attempt": 2,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Moved automountServiceAccountToken from securityContext to pod spec level to satisfy schema and keep it false."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "IMAGE_TAG_CHANGED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 10
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:28+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b02-legacy-dns-client",
+      "k": 2,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1293,
+        "completion_tokens": 765,
+        "total_tokens": 2058,
+        "llm_latency_s": 4.68
+      },
+      "wall_s": 4.86,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, changed runAsUser to 1000 and set runAsNonRoot true, added allowPrivilegeEscalation false, set readOnlyRootFilesystem true, pinned image tag to v1.2.3, added CPU/memory limits and requests."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "IMAGE_TAG_CHANGED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 10
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:33+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b02-legacy-dns-client",
+      "k": 3,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 2,
+      "llm_calls": 2,
+      "tokens": {
+        "prompt_tokens": 2639,
+        "completion_tokens": 1327,
+        "total_tokens": 3966,
+        "llm_latency_s": 6.56
+      },
+      "wall_s": 6.8,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [
+            "kubeconform"
+          ],
+          "blocking": [
+            "BG011"
+          ],
+          "rationale": "Added automountServiceAccountToken false, set runAsNonRoot true with runAsUser 1000, allowPrivilegeEscalation false, readOnlyRootFilesystem true, added CPU/memory limits/requests, pinned image tag to v1.0.0."
+        },
+        {
+          "attempt": 2,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Moved automountServiceAccountToken from securityContext to pod spec level to satisfy schema and finding BG011."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "IMAGE_TAG_CHANGED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 10
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:39+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b03-nginx-reloader-sidecar",
+      "k": 1,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1332,
+        "completion_tokens": 759,
+        "total_tokens": 2091,
+        "llm_latency_s": 4.49
+      },
+      "wall_s": 4.66,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, set runAsNonRoot true with runAsUser 101, allowPrivilegeEscalation false, readOnlyRootFilesystem true, added CPU/memory requests and limits for both containers."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 10
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:44+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b03-nginx-reloader-sidecar",
+      "k": 2,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1332,
+        "completion_tokens": 604,
+        "total_tokens": 1936,
+        "llm_latency_s": 3.01
+      },
+      "wall_s": 3.18,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, set runAsNonRoot true with runAsUser 101, allowPrivilegeEscalation false, readOnlyRootFilesystem true, added CPU/memory requests and limits for both containers."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 10
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:47+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b03-nginx-reloader-sidecar",
+      "k": 3,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1332,
+        "completion_tokens": 658,
+        "total_tokens": 1990,
+        "llm_latency_s": 3.48
+      },
+      "wall_s": 3.66,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken: false, set runAsNonRoot: true with matching runAsUser 101 for both containers, set allowPrivilegeEsalation: false, readOnlyRootFilesystem: true, dropped all capabilities, added CPU/memory limits and requests."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 10
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:51+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b04-gpu-inference-initmodel",
+      "k": 1,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "SAFE_TO_PROPOSE",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1405,
+        "completion_tokens": 787,
+        "total_tokens": 2192,
+        "llm_latency_s": 3.47
+      },
+      "wall_s": 3.65,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true, dropped all capabilities, and added CPU/memory limits/requests for init and main containers."
+        }
+      ],
+      "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "LIMITS_ADDED",
+        "USER_CHANGED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 13
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:54+01:00",
+      "cell": "TRUE_SAFE"
+    },
+    {
+      "case": "b04-gpu-inference-initmodel",
+      "k": 2,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "SAFE_TO_PROPOSE",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1405,
+        "completion_tokens": 671,
+        "total_tokens": 2076,
+        "llm_latency_s": 3.97
+      },
+      "wall_s": 4.15,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot, runAsUser 1000, allowPrivilegeEscalation false, readOnlyRootFilesystem true, and CPU/memory requests/limits for both containers."
+        }
+      ],
+      "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "LIMITS_ADDED",
+        "USER_CHANGED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 13
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:43:59+01:00",
+      "cell": "TRUE_SAFE"
+    },
+    {
+      "case": "b04-gpu-inference-initmodel",
+      "k": 3,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "SAFE_TO_PROPOSE",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1405,
+        "completion_tokens": 733,
+        "total_tokens": 2138,
+        "llm_latency_s": 3.87
+      },
+      "wall_s": 4.06,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true, drop ALL capabilities, and CPU/memory requests/limits to all containers."
+        }
+      ],
+      "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "LIMITS_ADDED",
+        "USER_CHANGED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 13
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:03+01:00",
+      "cell": "TRUE_SAFE"
+    },
+    {
+      "case": "b05-janitor-cronjob",
+      "k": 1,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 3,
+      "llm_calls": 3,
+      "tokens": {
+        "prompt_tokens": 3419,
+        "completion_tokens": 2097,
+        "total_tokens": 5516,
+        "llm_latency_s": 11.63
+      },
+      "wall_s": 11.99,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [
+            "BG011"
+          ],
+          "rationale": "Added securityContext (runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true, drop ALL capabilities) and resource requests/limits to address BG005, BG006, BG007, BG009. Kept automountServiceAccountToken default true as API is needed."
+        },
+        {
+          "attempt": 2,
+          "ok": false,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [
+            "BG011"
+          ],
+          "rationale": "Added automountServiceAccountToken: true to ensure the pod receives a service account token for API access, satisfying BG011 while keeping the CronJob functional."
+        },
+        {
+          "attempt": 3,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Set automountServiceAccountToken to false and added a projected serviceAccountToken volume to provide the required API token, satisfying BG011 while keeping the CronJob functional."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 11
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:15+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b05-janitor-cronjob",
+      "k": 2,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1126,
+        "completion_tokens": 687,
+        "total_tokens": 1813,
+        "llm_latency_s": 3.75
+      },
+      "wall_s": 3.92,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Set automountServiceAccountToken false and added projected serviceAccountToken volume to keep API access. Added securityContext with runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem, drop all capabilities. Added CPU/memory limits and requests."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 11
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:19+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b05-janitor-cronjob",
+      "k": 3,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 2,
+      "llm_calls": 2,
+      "tokens": {
+        "prompt_tokens": 2267,
+        "completion_tokens": 1404,
+        "total_tokens": 3671,
+        "llm_latency_s": 7.78
+      },
+      "wall_s": 8.09,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [
+            "BG011"
+          ],
+          "rationale": "Added automountServiceAccountToken: true to keep API token; added securityContext with runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true; added CPU/memory limits and requests."
+        },
+        {
+          "attempt": 2,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Set automountServiceAccountToken to false and added a projected serviceAccountToken volume to provide API token as required."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 11
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:27+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b06-jvm-billing-service",
+      "k": 1,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 2,
+      "llm_calls": 2,
+      "tokens": {
+        "prompt_tokens": 2460,
+        "completion_tokens": 1435,
+        "total_tokens": 3895,
+        "llm_latency_s": 9.35
+      },
+      "wall_s": 9.63,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [
+            "kube-linter"
+          ],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot true, runAsUser 1000, allowPrivilegeEscalation false, readOnlyRootFilesystem true, and resource limits (cpu 500m, memory 1Gi) to address all blocking findings."
+        },
+        {
+          "attempt": 2,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added CPU and memory requests to satisfy kube-linter unset-cpu-requirements while keeping existing limits and all other security settings unchanged."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 8
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:36+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b06-jvm-billing-service",
+      "k": 2,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1169,
+        "completion_tokens": 462,
+        "total_tokens": 1631,
+        "llm_latency_s": 2.6
+      },
+      "wall_s": 2.79,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true, dropped all capabilities, added CPU/memory requests and limits (memory limit >=1Gi). Kept image, JAVA_OPTS, ports, Service selector unchanged."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 8
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:39+01:00",
+      "cell": "FALSE_REVIEW"
+    },
+    {
+      "case": "b06-jvm-billing-service",
+      "k": 3,
+      "category": "blind",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "VERIFIED",
+      "initial_status": "BLOCKED",
+      "release": "REVIEW_REQUIRED",
+      "error": null,
+      "attempts": 1,
+      "llm_calls": 1,
+      "tokens": {
+        "prompt_tokens": 1169,
+        "completion_tokens": 509,
+        "total_tokens": 1678,
+        "llm_latency_s": 3.62
+      },
+      "wall_s": 3.8,
+      "over_wall_budget": false,
+      "validators": [
+        {
+          "name": "kubeconform",
+          "status": "pass"
+        },
+        {
+          "name": "kube-linter",
+          "status": "pass"
+        }
+      ],
+      "attempt_summaries": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "error": null,
+          "parse_error": null,
+          "guard": [],
+          "failed_validators": [],
+          "blocking": [],
+          "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot true, runAsUser 1000, allowPrivilegeEscalation false, readOnlyRootFilesystem true, and CPU/memory limits/requests to satisfy findings while keeping image, JAVA_OPTS, ports, and Service unchanged."
+        }
+      ],
+      "intent_verdict": "REVIEW_REQUIRED",
+      "drift_codes": [
+        "SA_TOKEN_DISABLED",
+        "USER_CHANGED",
+        "ROOTFS_READONLY_NO_WRITABLE_PATH",
+        "LIMITS_ADDED"
+      ],
+      "oracle": {
+        "verdict": "preserved",
+        "failed": [],
+        "checks": 8
+      },
+      "last_candidate_oracle": null,
+      "timestamp": "2026-10-29T04:44:43+01:00",
+      "cell": "FALSE_REVIEW"
+    }
+  ]
+}

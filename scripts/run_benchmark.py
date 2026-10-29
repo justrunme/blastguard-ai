@@ -3,6 +3,7 @@
 Usage:
   .venv/bin/python scripts/run_benchmark.py [--repeats 3] [--cases 01,03] [--only-failed]
   .venv/bin/python scripts/run_benchmark.py --offline      # rebuild results from saved raw JSON, no API calls
+  .venv/bin/python scripts/run_benchmark.py --suite blind  # blind corpus in benchmark/blind/ (own oracles, own results/)
 Requires NEBIUS_API_KEY for online mode (read from the environment; never printed).
 """
 from __future__ import annotations
@@ -24,6 +25,8 @@ BENCH = ROOT / "benchmark"
 RAW = BENCH / "results" / "raw"
 MAX_TOTAL_RUNS = 150
 PER_RUN_WALL_S = 120.0
+CORPUS_NOTE = ("- All statements below hold **on this corpus** only (16 hand-written cases). It is small and authored by the "
+               "same project; it is not evidence about Kubernetes manifests in general.")
 MATRIX = ("TRUE_REVIEW", "FALSE_SAFE", "FALSE_REVIEW", "TRUE_SAFE")
 
 
@@ -136,8 +139,7 @@ def write_reports(cases: list[dict], agg: dict) -> None:
          f"- Model: `{s['model']}` (NVIDIA Nemotron via Nebius Token Factory)",
          f"- Date of runs: {dates[0] if dates else '?'}{' to ' + dates[-1] if dates and dates[-1] != dates[0] else ''}",
          f"- Total runs: n={s['n_runs']} ({len(cases)} cases); LLM calls: {s['llm_calls']}",
-         "- All statements below hold **on this corpus** only (16 hand-written cases). It is small and authored by the "
-         "same project; it is not evidence about Kubernetes manifests in general.", "",
+         CORPUS_NOTE, "",
          "## Corpus", "",
          "| id | category | secure+functional fix possible | expected |", "|---|---|---|---|"]
     for c in cases:
@@ -212,13 +214,29 @@ def write_reports(cases: list[dict], agg: dict) -> None:
     (BENCH / "results" / "RESULTS.md").write_text("\n".join(L) + "\n")
 
 
+def _use_blind_suite() -> None:
+    """Point the runner at benchmark/blind/ (cases, oracles, results) without changing the default suite."""
+    global BENCH, RAW, ORACLES, evaluate, MAX_TOTAL_RUNS, CORPUS_NOTE
+    from benchmark.blind import oracles as blind_oracles
+    BENCH = ROOT / "benchmark" / "blind"
+    RAW = BENCH / "results" / "raw"
+    ORACLES, evaluate = blind_oracles.ORACLES, blind_oracles.evaluate
+    MAX_TOTAL_RUNS = 40
+    CORPUS_NOTE = ("- BLIND suite. All statements below hold **on this corpus** only: 6 cases written by one author "
+                   "without reading the gate, scored by static oracles in `benchmark/blind/oracles.py`; no cluster run. "
+                   "The per-run `Corpus` caveat paragraph below describes the main suite's oracles, not these.")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--offline", action="store_true", help="replay saved raw JSON, no API calls")
     ap.add_argument("--cases", default="", help="comma-separated id prefixes")
     ap.add_argument("--only-failed", action="store_true", help="rerun only raw runs with API/harness errors")
+    ap.add_argument("--suite", choices=("main", "blind"), default="main")
     args = ap.parse_args()
+    if args.suite == "blind":
+        _use_blind_suite()
     cases = load_cases()
     RAW.mkdir(parents=True, exist_ok=True)
     if not args.offline:

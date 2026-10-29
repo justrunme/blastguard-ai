@@ -1,0 +1,57 @@
+{
+  "case": "b01-postgres-statefulset",
+  "k": 3,
+  "category": "blind",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "SAFE_TO_PROPOSE",
+  "error": null,
+  "attempts": 1,
+  "llm_calls": 1,
+  "tokens": {
+    "prompt_tokens": 1253,
+    "completion_tokens": 661,
+    "total_tokens": 1914,
+    "llm_latency_s": 3.52
+  },
+  "wall_s": 3.69,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added automountServiceAccountToken false, set runAsUser/fsGroup to 999 and runAsNonRoot true, set allowPrivilegeEscalation false, added readOnlyRootFilesystem true with emptyDir mounts for /var/run/postgresql and /tmp, added CPU/Memory limits and requests meeting minimum memory."
+    }
+  ],
+  "intent_verdict": "NO_HIGH_IMPACT_DRIFT",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED",
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 13
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: orders-db\n  namespace: data\nspec:\n  serviceName: orders-db\n  replicas: 1\n  selector:\n    matchLabels:\n      app: orders-db\n  template:\n    metadata:\n      labels:\n        app: orders-db\n    spec:\n      securityContext:\n        fsGroup: 999\n        runAsUser: 999\n        runAsNonRoot: true\n      automountServiceAccountToken: false\n      containers:\n        - name: postgres\n          image: postgres:15.6\n          args: [\"-c\", \"shared_buffers=256MB\"]\n          env:\n            - name: PGDATA\n              value: /var/lib/postgresql/data/pgdata\n            - name: POSTGRES_PASSWORD\n              valueFrom:\n                secretKeyRef:\n                  name: orders-db\n                  key: password\n          ports:\n            - name: pg\n              containerPort: 5432\n          volumeMounts:\n            - name: pgdata\n              mountPath: /var/lib/postgresql/data\n            - name: var-run-postgresql\n              mountPath: /var/run/postgresql\n            - name: tmp\n              mountPath: /tmp\n          securityContext:\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"512Mi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"256Mi\"\n      volumes:\n        - name: var-run-postgresql\n          emptyDir: {}\n        - name: tmp\n          emptyDir: {}\n  volumeClaimTemplates:\n    - metadata:\n        name: pgdata\n      spec:\n        accessModes: [\"ReadWriteOnce\"]\n        resources:\n          requests:\n            storage: 20Gi",
+  "last_candidate": null,
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,10 +1,3 @@\n-# BLIND CASE b01: PostgreSQL StatefulSet with persistent storage.\n-# MUST KEEP WORKING:\n-#  - volumeClaimTemplate \"pgdata\" (>=10Gi) mounted at /var/lib/postgresql/data in container \"postgres\"\n-#  - the data dir is owned by uid/gid 999: if runAsUser/fsGroup are set they must be 999\n-#  - image stays exactly postgres:15.6 (a digest suffix is fine); PGDATA env unchanged\n-#  - if readOnlyRootFilesystem is enabled, /var/run/postgresql and /tmp must be writable mounts\n-#  - memory limit, if set, >= 512Mi (shared_buffers=256MB)\n apiVersion: apps/v1\n kind: StatefulSet\n metadata:\n@@ -23,6 +16,9 @@\n     spec:\n       securityContext:\n         fsGroup: 999\n+        runAsUser: 999\n+        runAsNonRoot: true\n+      automountServiceAccountToken: false\n       containers:\n         - name: postgres\n           image: postgres:15.6\n@@ -41,6 +37,25 @@\n           volumeMounts:\n             - name: pgdata\n               mountPath: /var/lib/postgresql/data\n+            - name: var-run-postgresql\n+              mountPath: /var/run/postgresql\n+            - name: tmp\n+              mountPath: /tmp\n+          securityContext:\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: \"500m\"\n+              memory: \"512Mi\"\n+            requests:\n+              cpu: \"250m\"\n+              memory: \"256Mi\"\n+      volumes:\n+        - name: var-run-postgresql\n+          emptyDir: {}\n+        - name: tmp\n+          emptyDir: {}\n   volumeClaimTemplates:\n     - metadata:\n         name: pgdata\n@@ -48,4 +63,4 @@\n         accessModes: [\"ReadWriteOnce\"]\n         resources:\n           requests:\n-            storage: 20Gi\n+            storage: 20Gi",
+  "timestamp": "2026-10-29T04:43:22+01:00"
+}

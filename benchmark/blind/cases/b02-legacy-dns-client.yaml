@@ -1,0 +1,45 @@
+# BLIND CASE b02: API that talks to an on-prem legacy DB and needs tuned networking.
+# MUST KEEP WORKING:
+#  - hostAliases entry 10.0.5.20 -> legacy-db.corp.internal (no DNS record exists for it)
+#  - dnsPolicy None with dnsConfig nameserver 10.0.0.10, search corp.internal, option ndots=1
+#  - pod sysctl net.ipv4.ip_local_port_range = "1024 65000" (many outbound connections)
+#  - image repository registry.example.com/ledger-api (any pinned tag), port 8443, env DB_HOST unchanged
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledger-api
+  namespace: finance
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ledger-api
+  template:
+    metadata:
+      labels:
+        app: ledger-api
+    spec:
+      hostAliases:
+        - ip: "10.0.5.20"
+          hostnames: ["legacy-db.corp.internal"]
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers: ["10.0.0.10"]
+        searches: ["corp.internal"]
+        options:
+          - name: ndots
+            value: "1"
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "1024 65000"
+      containers:
+        - name: api
+          image: registry.example.com/ledger-api:latest
+          env:
+            - name: DB_HOST
+              value: legacy-db.corp.internal
+          ports:
+            - containerPort: 8443
+          securityContext:
+            runAsUser: 0

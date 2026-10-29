@@ -203,3 +203,17 @@ the original reports `COLLECTED`, the model-patched manifest reports `NOTHING_TO
 really stops doing its job in a cluster, which is what the gate flagged statically
 ([successful run](https://github.com/justrunme/blastguard-ai/actions/runs/40813773858)). It uses synthetic data only
 and never runs user YAML. It is one case, not a benchmark.
+
+## Blind challenge (6 unseen cases)
+
+Six extra cases (Postgres StatefulSet, legacy DNS client, nginx with a reloader sidecar, GPU inference server,
+kubectl CronJob, JVM service) were written and scored by a separate pass that had not read the gate, then run
+3 times each against the real model: [`benchmark/blind/results/RESULTS.md`](benchmark/blind/results/RESULTS.md).
+
+Result, on this corpus: all 18 runs reached VERIFIED; the frozen oracles found no broken function in any of them
+(so FALSE_SAFE = 0, but also TRUE_REVIEW = 0: this suite does not show that the gate catches real breakage). The gate
+sent 13 of 18 runs to review and let 5 through. Reading the patches afterwards, about 9 of those 13 (a `:latest` image
+turned into an invented tag, a read-only root with no writable path, a service-account token mounted without
+`ca.crt`) look genuinely broken in ways the blind oracles did not check, and about 4 look like false alarms. The
+official matrix is left as frozen. Limits: one author, static oracles, no cluster run; the gate gave generic reasons
+rather than naming the exact failure.

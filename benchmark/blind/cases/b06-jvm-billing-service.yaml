@@ -1,0 +1,46 @@
+# BLIND CASE b06: JVM billing API plus its Service.
+# MUST KEEP WORKING:
+#  - image stays exactly registry.example.com/billing:3.4.1 (pinned release; another tag is a different app)
+#  - JAVA_OPTS unchanged (-Xmx768m); memory limit, if set, >= 1Gi (heap + metaspace + threads)
+#  - container port named "http" = 8080; Service targetPort "http" resolves to it
+#  - Service selector (app=billing, tier=api) still matches the pod template labels
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing
+  namespace: billing
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: billing
+      tier: api
+  template:
+    metadata:
+      labels:
+        app: billing
+        tier: api
+    spec:
+      containers:
+        - name: billing
+          image: registry.example.com/billing:3.4.1
+          env:
+            - name: JAVA_OPTS
+              value: "-Xms512m -Xmx768m -XX:+UseG1GC"
+          ports:
+            - name: http
+              containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing
+  namespace: billing
+spec:
+  selector:
+    app: billing
+    tier: api
+  ports:
+    - name: web
+      port: 80
+      targetPort: http

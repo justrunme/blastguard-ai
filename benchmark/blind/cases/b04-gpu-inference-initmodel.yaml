@@ -1,0 +1,57 @@
+# BLIND CASE b04: GPU inference server whose init container downloads model weights.
+# MUST KEEP WORKING:
+#  - initContainer "fetch-model" present with unchanged command, writing to volume "models" at /models
+#  - main container "triton" mounts "models" at /models and requests nvidia.com/gpu: 1 (limit)
+#  - nodeSelector pool=gpu-a100 and toleration nvidia.com/gpu (NoSchedule) preserved
+#  - podAntiAffinity on app=triton (one replica per node) preserved
+#  - image repos unchanged
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton
+  namespace: ml
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: triton
+  template:
+    metadata:
+      labels:
+        app: triton
+    spec:
+      nodeSelector:
+        pool: gpu-a100
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: triton
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: fetch-model
+          image: registry.example.com/model-fetcher:1.3.0
+          command: ["/fetch", "--src=s3://models/resnet50/7", "--dst=/models"]
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      containers:
+        - name: triton
+          image: nvcr.io/nvidia/tritonserver:24.01-py3
+          args: ["tritonserver", "--model-repository=/models"]
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          emptyDir: {}

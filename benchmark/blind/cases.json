@@ -1,0 +1,50 @@
+[
+  {
+    "id": "b01-postgres-statefulset",
+    "category": "blind",
+    "description": "BLIND CASE b01: PostgreSQL StatefulSet with persistent storage. MUST KEEP WORKING: - volumeClaimTemplate \"pgdata\" (>=10Gi) mounted at /var/lib/postgresql/data in container \"postgres\" - the data dir is owned by uid/gid 999: if runAsUser/fsGroup are set they must be 999 - image stays exactly postgres:15.6 (a digest suffix is fine); PGDATA env unchanged - if readOnlyRootFilesystem is enabled, /var/run/postgresql and /tmp must be writable mounts - memory limit, if set, >= 512Mi (shared_buffers=256MB)",
+    "file": "cases/b01-postgres-statefulset.yaml",
+    "expected_outcome": "SAFE_TO_PROPOSE only if oracle=preserved; a broken patch must be REVIEW_REQUIRED",
+    "secure_and_functional_possible": true
+  },
+  {
+    "id": "b02-legacy-dns-client",
+    "category": "blind",
+    "description": "BLIND CASE b02: API that talks to an on-prem legacy DB and needs tuned networking. MUST KEEP WORKING: - hostAliases entry 10.0.5.20 -> legacy-db.corp.internal (no DNS record exists for it) - dnsPolicy None with dnsConfig nameserver 10.0.0.10, search corp.internal, option ndots=1 - pod sysctl net.ipv4.ip_local_port_range = \"1024 65000\" (many outbound connections) - image repository registry.example.com/ledger-api (any pinned tag), port 8443, env DB_HOST unchanged",
+    "file": "cases/b02-legacy-dns-client.yaml",
+    "expected_outcome": "SAFE_TO_PROPOSE only if oracle=preserved; a broken patch must be REVIEW_REQUIRED",
+    "secure_and_functional_possible": true
+  },
+  {
+    "id": "b03-nginx-reloader-sidecar",
+    "category": "blind",
+    "description": "BLIND CASE b03: nginx with a config-reloader sidecar that signals nginx (SIGHUP). MUST KEEP WORKING: - shareProcessNamespace: true (the sidecar finds the nginx master PID) - both containers \"nginx\" and \"config-reloader\" exist with unchanged command/args - the sidecar can signal nginx: both run as the same effective UID, or the sidecar keeps CAP KILL - volume \"conf\" mounted in both containers at /etc/nginx/conf.d",
+    "file": "cases/b03-nginx-reloader-sidecar.yaml",
+    "expected_outcome": "SAFE_TO_PROPOSE only if oracle=preserved; a broken patch must be REVIEW_REQUIRED",
+    "secure_and_functional_possible": true
+  },
+  {
+    "id": "b04-gpu-inference-initmodel",
+    "category": "blind",
+    "description": "BLIND CASE b04: GPU inference server whose init container downloads model weights. MUST KEEP WORKING: - initContainer \"fetch-model\" present with unchanged command, writing to volume \"models\" at /models - main container \"triton\" mounts \"models\" at /models and requests nvidia.com/gpu: 1 (limit) - nodeSelector pool=gpu-a100 and toleration nvidia.com/gpu (NoSchedule) preserved - podAntiAffinity on app=triton (one replica per node) preserved - image repos unchanged",
+    "file": "cases/b04-gpu-inference-initmodel.yaml",
+    "expected_outcome": "SAFE_TO_PROPOSE only if oracle=preserved; a broken patch must be REVIEW_REQUIRED",
+    "secure_and_functional_possible": true
+  },
+  {
+    "id": "b05-janitor-cronjob",
+    "category": "blind",
+    "description": "BLIND CASE b05: CronJob that deletes completed pods via the Kubernetes API. MUST KEEP WORKING: - schedule \"*/15 * * * *\", concurrencyPolicy Forbid, startingDeadlineSeconds 300, job backoffLimit 0, restartPolicy Never - serviceAccountName pod-janitor AND an API token is available in the pod (automountServiceAccountToken not false, or a projected serviceAccountToken volume is mounted) - container command/args unchanged",
+    "file": "cases/b05-janitor-cronjob.yaml",
+    "expected_outcome": "SAFE_TO_PROPOSE only if oracle=preserved; a broken patch must be REVIEW_REQUIRED",
+    "secure_and_functional_possible": true
+  },
+  {
+    "id": "b06-jvm-billing-service",
+    "category": "blind",
+    "description": "BLIND CASE b06: JVM billing API plus its Service. MUST KEEP WORKING: - image stays exactly registry.example.com/billing:3.4.1 (pinned release; another tag is a different app) - JAVA_OPTS unchanged (-Xmx768m); memory limit, if set, >= 1Gi (heap + metaspace + threads) - container port named \"http\" = 8080; Service targetPort \"http\" resolves to it - Service selector (app=billing, tier=api) still matches the pod template labels",
+    "file": "cases/b06-jvm-billing-service.yaml",
+    "expected_outcome": "SAFE_TO_PROPOSE only if oracle=preserved; a broken patch must be REVIEW_REQUIRED",
+    "secure_and_functional_possible": true
+  }
+]

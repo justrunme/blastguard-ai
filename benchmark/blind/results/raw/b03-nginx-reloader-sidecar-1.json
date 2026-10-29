@@ -1,0 +1,62 @@
+{
+  "case": "b03-nginx-reloader-sidecar",
+  "k": 1,
+  "category": "blind",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "REVIEW_REQUIRED",
+  "error": null,
+  "attempts": 1,
+  "llm_calls": 1,
+  "tokens": {
+    "prompt_tokens": 1332,
+    "completion_tokens": 759,
+    "total_tokens": 2091,
+    "llm_latency_s": 4.49
+  },
+  "wall_s": 4.66,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added automountServiceAccountToken false, set runAsNonRoot true with runAsUser 101, allowPrivilegeEscalation false, readOnlyRootFilesystem true, added CPU/memory requests and limits for both containers."
+    }
+  ],
+  "intent_verdict": "REVIEW_REQUIRED",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED",
+    "USER_CHANGED",
+    "ROOTFS_READONLY_NO_WRITABLE_PATH",
+    "LIMITS_ADDED",
+    "USER_CHANGED",
+    "ROOTFS_READONLY_NO_WRITABLE_PATH",
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 10
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: edge-proxy\n  namespace: web\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: edge-proxy\n  template:\n    metadata:\n      labels:\n        app: edge-proxy\n    spec:\n      shareProcessNamespace: true\n      automountServiceAccountToken: false\n      containers:\n        - name: nginx\n          image: nginxinc/nginx-unprivileged:1.25.4\n          ports:\n            - containerPort: 8080\n          volumeMounts:\n            - name: conf\n              mountPath: /etc/nginx/conf.d\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 101\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            requests:\n              cpu: 50m\n              memory: 64Mi\n            limits:\n              cpu: 100m\n              memory: 128Mi\n        - name: config-reloader\n          image: registry.example.com/conf-reloader:2.1.0\n          command: [\"/bin/reloader\"]\n          args: [\"--watch=/etc/nginx/conf.d\", \"--signal=HUP\", \"--process=nginx: master\"]\n          volumeMounts:\n            - name: conf\n              mountPath: /etc/nginx/conf.d\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 101\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            requests:\n              cpu: 50m\n              memory: 64Mi\n            limits:\n              cpu: 100m\n              memory: 128Mi\n      volumes:\n        - name: conf\n          configMap:\n            name: edge-proxy-conf",
+  "last_candidate": null,
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,9 +1,3 @@\n-# BLIND CASE b03: nginx with a config-reloader sidecar that signals nginx (SIGHUP).\n-# MUST KEEP WORKING:\n-#  - shareProcessNamespace: true (the sidecar finds the nginx master PID)\n-#  - both containers \"nginx\" and \"config-reloader\" exist with unchanged command/args\n-#  - the sidecar can signal nginx: both run as the same effective UID, or the sidecar keeps CAP KILL\n-#  - volume \"conf\" mounted in both containers at /etc/nginx/conf.d\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -20,6 +14,7 @@\n         app: edge-proxy\n     spec:\n       shareProcessNamespace: true\n+      automountServiceAccountToken: false\n       containers:\n         - name: nginx\n           image: nginxinc/nginx-unprivileged:1.25.4\n@@ -28,6 +23,18 @@\n           volumeMounts:\n             - name: conf\n               mountPath: /etc/nginx/conf.d\n+          securityContext:\n+            runAsNonRoot: true\n+            runAsUser: 101\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            requests:\n+              cpu: 50m\n+              memory: 64Mi\n+            limits:\n+              cpu: 100m\n+              memory: 128Mi\n         - name: config-reloader\n           image: registry.example.com/conf-reloader:2.1.0\n           command: [\"/bin/reloader\"]\n@@ -36,8 +43,18 @@\n             - name: conf\n               mountPath: /etc/nginx/conf.d\n           securityContext:\n-            allowPrivilegeEscalation: true\n+            runAsNonRoot: true\n+            runAsUser: 101\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            requests:\n+              cpu: 50m\n+              memory: 64Mi\n+            limits:\n+              cpu: 100m\n+              memory: 128Mi\n       volumes:\n         - name: conf\n           configMap:\n-            name: edge-proxy-conf\n+            name: edge-proxy-conf",
+  "timestamp": "2026-10-29T04:43:44+01:00"
+}

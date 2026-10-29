@@ -1,0 +1,28 @@
+# BLIND CASE b05: CronJob that deletes completed pods via the Kubernetes API.
+# MUST KEEP WORKING:
+#  - schedule "*/15 * * * *", concurrencyPolicy Forbid, startingDeadlineSeconds 300,
+#    job backoffLimit 0, restartPolicy Never
+#  - serviceAccountName pod-janitor AND an API token is available in the pod
+#    (automountServiceAccountToken not false, or a projected serviceAccountToken volume is mounted)
+#  - container command/args unchanged
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pod-janitor
+  namespace: ops
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          serviceAccountName: pod-janitor
+          restartPolicy: Never
+          containers:
+            - name: janitor
+              image: bitnami/kubectl:1.29.2
+              command: ["kubectl"]
+              args: ["delete", "pods", "--field-selector=status.phase==Succeeded", "-A"]

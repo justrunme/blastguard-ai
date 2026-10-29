@@ -1,0 +1,59 @@
+{
+  "case": "b06-jvm-billing-service",
+  "k": 3,
+  "category": "blind",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "REVIEW_REQUIRED",
+  "error": null,
+  "attempts": 1,
+  "llm_calls": 1,
+  "tokens": {
+    "prompt_tokens": 1169,
+    "completion_tokens": 509,
+    "total_tokens": 1678,
+    "llm_latency_s": 3.62
+  },
+  "wall_s": 3.8,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added automountServiceAccountToken false, securityContext with runAsNonRoot true, runAsUser 1000, allowPrivilegeEscalation false, readOnlyRootFilesystem true, and CPU/memory limits/requests to satisfy findings while keeping image, JAVA_OPTS, ports, and Service unchanged."
+    }
+  ],
+  "intent_verdict": "REVIEW_REQUIRED",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED",
+    "USER_CHANGED",
+    "ROOTFS_READONLY_NO_WRITABLE_PATH",
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 8
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: billing\n  namespace: billing\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: billing\n      tier: api\n  template:\n    metadata:\n      labels:\n        app: billing\n        tier: api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: billing\n          image: registry.example.com/billing:3.4.1\n          env:\n            - name: JAVA_OPTS\n              value: \"-Xms512m -Xmx768m -XX:+UseG1GC\"\n          ports:\n            - name: http\n              containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"1Gi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"512Mi\"\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: billing\n  namespace: billing\nspec:\n  selector:\n    app: billing\n    tier: api\n  ports:\n    - name: web\n      port: 80\n      targetPort: http",
+  "last_candidate": null,
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,9 +1,3 @@\n-# BLIND CASE b06: JVM billing API plus its Service.\n-# MUST KEEP WORKING:\n-#  - image stays exactly registry.example.com/billing:3.4.1 (pinned release; another tag is a different app)\n-#  - JAVA_OPTS unchanged (-Xmx768m); memory limit, if set, >= 1Gi (heap + metaspace + threads)\n-#  - container port named \"http\" = 8080; Service targetPort \"http\" resolves to it\n-#  - Service selector (app=billing, tier=api) still matches the pod template labels\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -21,6 +15,7 @@\n         app: billing\n         tier: api\n     spec:\n+      automountServiceAccountToken: false\n       containers:\n         - name: billing\n           image: registry.example.com/billing:3.4.1\n@@ -30,6 +25,18 @@\n           ports:\n             - name: http\n               containerPort: 8080\n+          securityContext:\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: \"500m\"\n+              memory: \"1Gi\"\n+            requests:\n+              cpu: \"250m\"\n+              memory: \"512Mi\"\n ---\n apiVersion: v1\n kind: Service\n@@ -43,4 +50,4 @@\n   ports:\n     - name: web\n       port: 80\n-      targetPort: http\n+      targetPort: http",
+  "timestamp": "2026-10-29T04:44:43+01:00"
+}

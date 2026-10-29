@@ -1,0 +1,51 @@
+# BLIND CASE b01: PostgreSQL StatefulSet with persistent storage.
+# MUST KEEP WORKING:
+#  - volumeClaimTemplate "pgdata" (>=10Gi) mounted at /var/lib/postgresql/data in container "postgres"
+#  - the data dir is owned by uid/gid 999: if runAsUser/fsGroup are set they must be 999
+#  - image stays exactly postgres:15.6 (a digest suffix is fine); PGDATA env unchanged
+#  - if readOnlyRootFilesystem is enabled, /var/run/postgresql and /tmp must be writable mounts
+#  - memory limit, if set, >= 512Mi (shared_buffers=256MB)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orders-db
+  namespace: data
+spec:
+  serviceName: orders-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-db
+  template:
+    metadata:
+      labels:
+        app: orders-db
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:15.6
+          args: ["-c", "shared_buffers=256MB"]
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: orders-db
+                  key: password
+          ports:
+            - name: pg
+              containerPort: 5432
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi

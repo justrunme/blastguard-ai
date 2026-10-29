@@ -1,0 +1,60 @@
+{
+  "case": "b02-legacy-dns-client",
+  "k": 2,
+  "category": "blind",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "REVIEW_REQUIRED",
+  "error": null,
+  "attempts": 1,
+  "llm_calls": 1,
+  "tokens": {
+    "prompt_tokens": 1293,
+    "completion_tokens": 765,
+    "total_tokens": 2058,
+    "llm_latency_s": 4.68
+  },
+  "wall_s": 4.86,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Added automountServiceAccountToken false, changed runAsUser to 1000 and set runAsNonRoot true, added allowPrivilegeEscalation false, set readOnlyRootFilesystem true, pinned image tag to v1.2.3, added CPU/memory limits and requests."
+    }
+  ],
+  "intent_verdict": "REVIEW_REQUIRED",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED",
+    "IMAGE_TAG_CHANGED",
+    "USER_CHANGED",
+    "ROOTFS_READONLY_NO_WRITABLE_PATH",
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 10
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "# BLIND CASE b02: API that talks to an on-prem legacy DB and needs tuned networking.\n# MUST KEEP WORKING:\n#  - hostAliases entry 10.0.5.20 -> legacy-db.corp.internal (no DNS record exists for it)\n#  - dnsPolicy None with dnsConfig nameserver 10.0.0.10, search corp.internal, option ndots=1\n#  - pod sysctl net.ipv4.ip_local_port_range = \"1024 65000\" (many outbound connections)\n#  - image registry.example.com/ledger-api (any pinned tag), port 8443, env DB_HOST unchanged\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ledger-api\n  namespace: finance\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: ledger-api\n  template:\n    metadata:\n      labels:\n        app: ledger-api\n    spec:\n      hostAliases:\n        - ip: \"10.0.5.20\"\n          hostnames: [\"legacy-db.corp.internal\"]\n      dnsPolicy: \"None\"\n      dnsConfig:\n        nameservers: [\"10.0.0.10\"]\n        searches: [\"corp.internal\"]\n        options:\n          - name: ndots\n            value: \"1\"\n      securityContext:\n        sysctls:\n          - name: net.ipv4.ip_local_port_range\n            value: \"1024 65000\"\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: registry.example.com/ledger-api:v1.2.3\n          env:\n            - name: DB_HOST\n              value: legacy-db.corp.internal\n          ports:\n            - containerPort: 8443\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"128Mi\"",
+  "last_candidate": null,
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -3,7 +3,7 @@\n #  - hostAliases entry 10.0.5.20 -> legacy-db.corp.internal (no DNS record exists for it)\n #  - dnsPolicy None with dnsConfig nameserver 10.0.0.10, search corp.internal, option ndots=1\n #  - pod sysctl net.ipv4.ip_local_port_range = \"1024 65000\" (many outbound connections)\n-#  - image repository registry.example.com/ledger-api (any pinned tag), port 8443, env DB_HOST unchanged\n+#  - image registry.example.com/ledger-api (any pinned tag), port 8443, env DB_HOST unchanged\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -33,13 +33,24 @@\n         sysctls:\n           - name: net.ipv4.ip_local_port_range\n             value: \"1024 65000\"\n+      automountServiceAccountToken: false\n       containers:\n         - name: api\n-          image: registry.example.com/ledger-api:latest\n+          image: registry.example.com/ledger-api:v1.2.3\n           env:\n             - name: DB_HOST\n               value: legacy-db.corp.internal\n           ports:\n             - containerPort: 8443\n           securityContext:\n-            runAsUser: 0\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: \"500m\"\n+              memory: \"256Mi\"\n+            requests:\n+              cpu: \"250m\"\n+              memory: \"128Mi\"",
+  "timestamp": "2026-10-29T04:43:33+01:00"
+}

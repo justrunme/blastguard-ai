@@ -1,0 +1,71 @@
+{
+  "case": "b05-janitor-cronjob",
+  "k": 3,
+  "category": "blind",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "status": "VERIFIED",
+  "initial_status": "BLOCKED",
+  "release": "REVIEW_REQUIRED",
+  "error": null,
+  "attempts": 2,
+  "llm_calls": 2,
+  "tokens": {
+    "prompt_tokens": 2267,
+    "completion_tokens": 1404,
+    "total_tokens": 3671,
+    "llm_latency_s": 7.78
+  },
+  "wall_s": 8.09,
+  "over_wall_budget": false,
+  "validators": [
+    {
+      "name": "kubeconform",
+      "status": "pass"
+    },
+    {
+      "name": "kube-linter",
+      "status": "pass"
+    }
+  ],
+  "attempt_summaries": [
+    {
+      "attempt": 1,
+      "ok": false,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [
+        "BG011"
+      ],
+      "rationale": "Added automountServiceAccountToken: true to keep API token; added securityContext with runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true; added CPU/memory limits and requests."
+    },
+    {
+      "attempt": 2,
+      "ok": true,
+      "error": null,
+      "parse_error": null,
+      "guard": [],
+      "failed_validators": [],
+      "blocking": [],
+      "rationale": "Set automountServiceAccountToken to false and added a projected serviceAccountToken volume to provide API token as required."
+    }
+  ],
+  "intent_verdict": "REVIEW_REQUIRED",
+  "drift_codes": [
+    "SA_TOKEN_DISABLED",
+    "USER_CHANGED",
+    "ROOTFS_READONLY_NO_WRITABLE_PATH",
+    "LIMITS_ADDED"
+  ],
+  "oracle": {
+    "verdict": "preserved",
+    "failed": [],
+    "checks": 11
+  },
+  "last_candidate_oracle": null,
+  "final_yaml": "# BLIND CASE b05: CronJob that deletes completed pods via the Kubernetes API.\n# MUST KEEP WORKING:\n#  - schedule \"*/15 * * * *\", concurrencyPolicy Forbid, startingDeadlineSeconds 300,\n#    job backoffLimit 0, restartPolicy Never\n#  - serviceAccountName pod-janitor AND an API token is available in the pod\n#    (automountServiceAccountToken not false, or a projected serviceAccountToken volume is mounted)\n#  - container command/args unchanged\napiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: pod-janitor\n  namespace: ops\nspec:\n  schedule: \"*/15 * * * *\"\n  concurrencyPolicy: Forbid\n  startingDeadlineSeconds: 300\n  jobTemplate:\n    spec:\n      backoffLimit: 0\n      template:\n        spec:\n          serviceAccountName: pod-janitor\n          automountServiceAccountToken: false\n          restartPolicy: Never\n          volumes:\n            - name: kube-api-access-token\n              projected:\n                sources:\n                  - serviceAccountToken:\n                      path: token\n                      expirationSeconds: 3600\n                      audience: api\n          containers:\n            - name: janitor\n              image: bitnami/kubectl:1.29.2\n              command: [\"kubectl\"]\n              args: [\"delete\", \"pods\", \"--field-selector=status.phase==Succeeded\", \"-A\"]\n              securityContext:\n                runAsNonRoot: true\n                runAsUser: 1000\n                allowPrivilegeEscalation: false\n                readOnlyRootFilesystem: true\n              resources:\n                limits:\n                  cpu: \"100m\"\n                  memory: \"128Mi\"\n                requests:\n                  cpu: \"50m\"\n                  memory: \"64Mi\"\n              volumeMounts:\n                - name: kube-api-access-token\n                  mountPath: /var/run/secrets/kubernetes.io/serviceaccount\n                  readOnly: true",
+  "last_candidate": "# BLIND CASE b05: CronJob that deletes completed pods via the Kubernetes API.\n# MUST KEEP WORKING:\n#  - schedule \"*/15 * * * *\", concurrencyPolicy Forbid, startingDeadlineSeconds 300,\n#    job backoffLimit 0, restartPolicy Never\n#  - serviceAccountName pod-janitor AND an API token is available in the pod\n#    (automountServiceAccountToken not false, or a projected serviceAccountToken volume is mounted)\n#  - container command/args unchanged\napiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: pod-janitor\n  namespace: ops\nspec:\n  schedule: \"*/15 * * * *\"\n  concurrencyPolicy: Forbid\n  startingDeadlineSeconds: 300\n  jobTemplate:\n    spec:\n      backoffLimit: 0\n      template:\n        spec:\n          serviceAccountName: pod-janitor\n          automountServiceAccountToken: true\n          restartPolicy: Never\n          containers:\n            - name: janitor\n              image: bitnami/kubectl:1.29.2\n              command: [\"kubectl\"]\n              args: [\"delete\", \"pods\", \"--field-selector=status.phase==Succeeded\", \"-A\"]\n              securityContext:\n                runAsNonRoot: true\n                runAsUser: 1000\n                allowPrivilegeEscalation: false\n                readOnlyRootFilesystem: true\n              resources:\n                limits:\n                  cpu: \"100m\"\n                  memory: \"128Mi\"\n                requests:\n                  cpu: \"50m\"\n                  memory: \"64Mi\"",
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -20,9 +20,34 @@\n       template:\n         spec:\n           serviceAccountName: pod-janitor\n+          automountServiceAccountToken: false\n           restartPolicy: Never\n+          volumes:\n+            - name: kube-api-access-token\n+              projected:\n+                sources:\n+                  - serviceAccountToken:\n+                      path: token\n+                      expirationSeconds: 3600\n+                      audience: api\n           containers:\n             - name: janitor\n               image: bitnami/kubectl:1.29.2\n               command: [\"kubectl\"]\n               args: [\"delete\", \"pods\", \"--field-selector=status.phase==Succeeded\", \"-A\"]\n+              securityContext:\n+                runAsNonRoot: true\n+                runAsUser: 1000\n+                allowPrivilegeEscalation: false\n+                readOnlyRootFilesystem: true\n+              resources:\n+                limits:\n+                  cpu: \"100m\"\n+                  memory: \"128Mi\"\n+                requests:\n+                  cpu: \"50m\"\n+                  memory: \"64Mi\"\n+              volumeMounts:\n+                - name: kube-api-access-token\n+                  mountPath: /var/run/secrets/kubernetes.io/serviceaccount\n+                  readOnly: true",
+  "timestamp": "2026-10-29T04:44:27+01:00"
+}

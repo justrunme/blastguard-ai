@@ -203,11 +203,11 @@ is left as published: by the oracles those 13 are false alarms.
 
 **Post-hoc audit in a real cluster** ([`audit/AUDIT.md`](audit/AUDIT.md), disposable kind cluster in GitHub Actions,
 [evidence run](https://github.com/justrunme/blastguard-ai/actions/runs/40816573846)): of those 13 review calls,
-- 6 are **confirmed breaks**: nginx on a read-only root crash-loops in all 3 patched runs (`mkdir() "/tmp/proxy_temp"
+- **2 failure modes confirmed across 6 runs**: nginx on a read-only root crash-loops in all 3 patched runs (`mkdir() "/tmp/proxy_temp"
   failed (30: Read-only file system)`), and the kubectl CronJob with a token mounted without `ca.crt` fails TLS
   verification in all 3 patched runs, while both originals work;
 - 3 could not be tested (the case image registry is fictional, so the invented-tag suspicion is not confirmed);
-- 4 were not checked and look like false alarms (b01 run 2, b06 runs 1-3).
+- 4 were not checked and may be false alarms (b01 run 2, b06 runs 1-3).
 
 So the oracles were too lax, not the gate, for at least those 6 runs, and the gate gave generic reasons rather than
 naming the exact failure. Limits: post-hoc, one author, a small corpus, static oracles for the rest, and the audit

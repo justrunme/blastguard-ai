@@ -1,17 +1,17 @@
-# Demo video script (target 2:45, max 3:00)
+# Demo video script (final, 2:28)
 
-No third-party music or logos beyond the required sponsor mentions in narration. Screen recording + voiceover.
+Final cut: `BlastGuard_AI_demo.mp4`, 1920x1080, burned English subtitles. Voiceover is Piper TTS (en_US-ryan-high). No third-party music or logos beyond the sponsor mentions in narration.
 
-| Time | Shot | Voiceover |
-|---|---|---|
-| 0:00-0:15 | Title card: "BlastGuard AI" on dark background | "Kubernetes scanners tell you what is wrong. BlastGuard AI fixes it, and proves the fix." |
-| 0:15-0:35 | Sample 01 manifest in the UI, highlight `privileged`, `hostPath: /` | "This log collector runs privileged and mounts the whole node filesystem. One compromise, whole node." |
-| 0:35-0:55 | Click Run; live step log; red BLOCKED badge, findings table | "Deterministic checks, no AI involved, find N blocking issues. kubeconform and kube-linter run too." |
-| 0:55-1:30 | Attempt log: Nemotron call, tokens, latency; attempt PASS/FAIL expanders | "NVIDIA Nemotron on Nebius Token Factory proposes a full patched manifest through a tool call. It goes into a sandbox, never executed, and is re-checked from scratch. If anything still fails, the exact failures go back to the model. Max three attempts." |
-| 1:30-1:55 | Badge BLOCKED → VERIFIED (use the real result; if UNRESOLVED, show that) | Read the real outcome as recorded. |
-| 1:55-2:15 | Side-by-side diff | "Here is exactly what changed: non-root, no privilege escalation, emptyDir instead of hostPath, limits." |
-| 2:15-2:30 | Try identity-guard story: attempt that deleted/renamed (only if it happened in a real run; otherwise skip) | "The model cannot cheat by deleting the workload: an identity guard checks names, containers and images." |
-| 2:30-2:45 | Download evidence JSON/MD | "Every run produces an evidence report: findings per attempt, tokens, timings." |
-| 2:45-3:00 | Architecture diagram from README, repo URL | "Model proposes, deterministic tools decide. BlastGuard AI." |
+| Time | ID | On screen | Voiceover |
+|---|---|---|---|
+| 0:00-0:08 | n0 | Title slide s1: "BlastGuard AI", tagline, hackathon track, repo URL | Kubernetes scanners tell you what is wrong. AI fixers claim to fix it. But a secure patch can still break production. This is BlastGuard AI. |
+| 0:08-0:26 | n1 | Slide s2: the loop (6 steps, fails closed) | BlastGuard runs a loop. Deterministic rules and two external validators find the risk. NVIDIA Nemotron, through Nebius Token Factory, proposes a patch. It is checked again from scratch, with up to three attempts. Then a last gate asks one more question: did the patch change what the workload does? |
+| 0:26-0:42 | n2 | Screen recording, public demo: sample 01 node log collector, Run loop, live step log, BLOCKED -> VERIFIED, 9 -> 0 blocking | Here is a node log collector manifest on the public demo. It runs privileged, mounts the host file system, and shares the host process namespace. Nine blocking findings. I run the loop with real Nemotron calls. The patch comes back, and every check passes. Zero findings left. |
+| 0:42-0:59 | n3 | Screen recording: release decision REVIEW_REQUIRED, Intent Preservation Gate drifts (7 changes, 2 high impact) | But look at the release decision. Review required. The Intent Preservation Gate compared the patch with the original, and found seven changes. Two are high impact: the host path the collector reads its logs from was replaced, and privileged mode was removed. A human has to look before this ships. |
+| 0:59-1:14 | n4 | Slide s3: runtime proof on kind: original -> COLLECTED, patched -> NOTHING_TO_COLLECT, release -> REVIEW_REQUIRED (saved real patch replayed in CI) | We reproduced this failure mode in a real kind Kubernetes cluster using a saved Nemotron-generated patch. The original workload collects a marker file from the node. The security-verified patch collects nothing. BlastGuard flagged the operational risk before deployment. |
+| 1:14-1:29 | n5 | Screen recording: API sample, attempt 1 fails kube-linter, attempt 2 passes, SAFE_TO_PROPOSE | BlastGuard can also say yes. This API only lacked resource limits and some hardening. The first patch failed kube linter, the agent got the feedback and fixed it, and the second attempt passed. Only low impact changes, so the decision is safe to propose. |
+| 1:29-1:50 | n6 | Slide s4: benchmark 16 cases / 48 runs, 35 verified, 14 break function, 0 of 14 accepted | On our benchmark of sixteen cases and forty eight real Nemotron runs, thirty five patches passed security verification. A security only tool accepts all thirty five. Fourteen of them break the function the workload needs. BlastGuard accepted none of those fourteen as safe, and sent them to review. This is on our own corpus, with static oracles. |
+| 1:50-2:16 | n7 | Slide s5: blind challenge + cluster audit: 13 of 18 to review, 2 failure modes confirmed across 6 runs, 3 not testable, 4 may be false alarms | In a blind challenge of six unseen cases, the gate sent thirteen of eighteen patches to review, while our static oracles found no functional break. We then audited selected patches in Kubernetes. Two distinct failure modes were confirmed across six runs: nginx crashed on a read-only root filesystem, and a kubectl job failed TLS certificate verification. Three cases remained untestable, and four may be false alarms. We publish these limitations too. |
+| 2:16-2:28 | n8 | Slide s6: closing, live demo URL, repo URL, sponsors, Apache-2.0 | BlastGuard AI. AI that can refuse, with proof. Open source, Apache two, built on Nebius Token Factory and NVIDIA Nemotron. Try the live demo, or read the evidence in the repository. |
 
-Recording notes: use only real runs; do not edit numbers on screen.
+Recording notes: only real runs are shown; numbers on screen are not edited.

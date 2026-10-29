@@ -13,6 +13,7 @@ from blastguard_ai.manifest import MAX_MANIFEST_BYTES
 from blastguard_ai.report import to_json, to_markdown
 
 SESSION_RUN_CAP = int(os.environ.get("BLASTGUARD_SESSION_RUN_CAP", "5"))
+GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "400"))
 SAMPLES = {p.stem: p.read_text() for p in sorted((Path(__file__).parent / "samples").glob("*.yaml"))}
 COLORS = {"BLOCKED": "#e5484d", "VERIFIED": "#30a46c", "UNRESOLVED": "#f5a524"}
 SEV = {"critical": "🟥", "high": "🟧", "medium": "🟨", "info": "🟦"}
@@ -25,6 +26,11 @@ st.markdown("""<style>
  letter-spacing:.06em;font-size:1.05rem}
 .bg-arrow{font-size:1.4rem;margin:0 .6rem;color:#8b949e}
 </style>""", unsafe_allow_html=True)
+
+
+@st.cache_resource
+def _global_counter() -> dict:
+    return {"runs": 0}
 
 
 def badge(status: str) -> str:
@@ -65,7 +71,12 @@ with right:
     st.subheader("Live step log")
     log_box = st.empty()
 
+if go and _global_counter()["runs"] >= GLOBAL_RUN_CAP:
+    st.error("The public demo has reached its overall run limit to protect the API budget. "
+             "Clone the repo and run it with your own key.")
+    go = False
 if go:
+    _global_counter()["runs"] += 1
     st.session_state["runs"] = used + 1
     lines: list[str] = []
 

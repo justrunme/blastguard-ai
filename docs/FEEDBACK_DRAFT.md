@@ -1,18 +1,48 @@
-# Feedback draft: Nebius Token Factory / AI Cloud / NVIDIA tools
+# Feedback: Nebius Token Factory and NVIDIA Nemotron
 
-Only first-hand experiences from building this project. Placeholders are marked and must be filled or removed.
+First-hand notes from building BlastGuard AI. Every number comes from the saved runs in this repository
+(`benchmark/results/`, `benchmark/blind/results/`, `runtime/collector.evidence.json`).
 
-## Token Factory
-* OpenAI-compatible API: the stock `openai` Python SDK worked with only `base_url` changed. Confirmed: the stock `openai` SDK worked with only `base_url` and the API key set.
-* Model discovery via `GET /v1/models` returned 200 with the five Nemotron models we expected plus many other families, which made it easy to pick a model ID.
-* Tool calling with `nvidia/nemotron-3-super-120b-a12b`: the `submit_patch` function was called on every attempt (3 of 3 runs, channel `tool_call`); the plain-text fallback was never needed.
-* Latency / token usage per call: 2.7 to 4.7 s LLM latency and 1,403 to 1,649 total tokens per remediation run on our three samples.
-* Key creation: API keys and the model pages were blocked behind a billing-details form that needs a saved card (a $0.00 bank verification), even when you only want to use promo credits. It was not obvious up front, and the street field rejected the German letter "ö" ("Use only Latin letters and numbers").
-* Credits: the promo code was applied under Billing → Payments → "+" → "With promo code"; the balance showed $29.75 after the Builder Program credit and the promo, more than the $25 we expected.
+## Nebius Token Factory
 
-## Nebius AI Cloud
-* Not used: the demo runs on Streamlit Community Cloud and calls Token Factory over the API.
+What worked well
+* OpenAI compatibility is real: the stock `openai` Python SDK worked with only `base_url` and the API key changed.
+* `GET /v1/models` made picking `nvidia/nemotron-3-super-120b-a12b` trivial.
+* Reliability under a test load: across the 48 benchmark runs plus 18 blind runs (about 90 model calls, 151k tokens
+  in total) we saw 0 API errors and 0 harness errors. Median wall time per remediation run was about 5.4 s
+  (maximum 15.2 s), including up to three model attempts.
+* Tool calling worked: patches come back through a `submit_patch` function call (channel `tool_call` in the recorded
+  evidence), so no free-text parsing was needed.
+* Cost is easy to reason about: a typical run is about 1.5k to 3k tokens.
 
-## NVIDIA Nemotron
-* Patch quality on the 3 samples: all three patches passed our deterministic rules, kubeconform and kube-linter on the first attempt. One patch was safe but functionally lossy (`hostPath: /` replaced with `emptyDir`), so a human must review the diff.
-* Token use was small (about 1.4k to 1.6k tokens per run) and the rationale returned with each patch was concise and accurate.
+What could be better
+* Key creation and model pages sat behind a billing-details form that needs a saved card (a $0.00 verification), even
+  when you only want to use promo credits. It was not obvious up front. A short note on the sign-up page would save
+  new users a detour.
+* The billing address field rejected a German letter ("ö", "Use only Latin letters and numbers"), which is awkward
+  for European users.
+* There is no per-key spend limit that we could find in the console. We had to enforce our own caps in the app
+  (per-session and process-wide run limits) to protect a public demo. A per-key budget would make public demos safer.
+* The promo credit was applied under Billing, Payments, "With promo code"; this was easy to miss.
+
+## NVIDIA Nemotron (nemotron-3-super-120b-a12b)
+
+What worked well
+* Instruction following on a structured task: it returned a complete patched manifest each time, kept the workload
+  identity (name, kind, container names) and followed the verifier feedback on retry. In the recorded runs the retry
+  loop fixed things like unset CPU requests flagged by kube-linter after the first attempt.
+* It ignored prompt injection placed inside manifests in 3 of 3 runs on our corpus.
+* Rationales were short and mostly accurate.
+
+What we learned the hard way
+* The model optimises for "the findings go away". On 5 function-critical cases (a log collector that needs a
+  `hostPath`, a `hostNetwork` exporter, a public `LoadBalancer`, an eBPF agent needing `NET_ADMIN`, a `docker.sock`
+  consumer) it removed the needed capability in every run that finished. 14 of those 35 verified patches pass every
+  security check and break the workload. In a real Kubernetes cluster, the saved patch for our synthetic collector
+  stopped collecting.
+* In the blind suite the model sometimes invented details: `:latest` replaced by tags such as `v1.2.3` that may not
+  exist, or a service-account token mounted without `ca.crt`. See `audit/AUDIT.md` for what we could confirm.
+* Suggestion: a mode or system-prompt pattern for "minimal, behaviour-preserving diff, and say explicitly what
+  you could not preserve" would be useful for infrastructure agents.
+
+All numbers are on our own corpus (16 + 6 hand-written cases, one author, static oracles for most of them).

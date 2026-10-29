@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 
 import streamlit as st
@@ -31,6 +32,23 @@ st.markdown("""<style>
 @st.cache_resource
 def _global_counter() -> dict:
     return {"runs": 0}
+
+
+@st.cache_resource(show_spinner="Installing optional validators (kubeconform, kube-linter)...")
+def _ensure_validators() -> bool:
+    """On hosts without the validator binaries (e.g. Streamlit Cloud), fetch the pinned releases once."""
+    root = Path(__file__).parent
+    if (root / "bin" / "kubeconform").exists() and (root / "bin" / "kube-linter").exists():
+        return True
+    try:
+        subprocess.run(["sh", str(root / "scripts" / "install_tools.sh")], check=True, timeout=90,
+                       capture_output=True)
+        return True
+    except Exception:
+        return False
+
+
+_ensure_validators()
 
 
 def badge(status: str) -> str:
@@ -92,6 +110,7 @@ if go:
     with st.spinner("Running detect → patch → verify loop…"):
         st.session_state["result"] = run_remediation(text, client, max_attempts=attempts, on_event=on_event)
         st.session_state["source"] = choice
+    st.rerun()
 
 res = st.session_state.get("result")
 if res:

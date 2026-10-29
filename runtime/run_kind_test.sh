@@ -42,4 +42,5 @@ echo "original=$ORIG patched=$PATCHED"
 printf '{"original":"%s","model_patched":"%s","blastguard_release":"%s"}\n' "$ORIG" "$PATCHED" \
   "$(python3 -c "import json;print(json.load(open('collector.evidence.json'))['release'])")" > runtime-result.json
 cat runtime-result.json
-[ "$ORIG" = COLLECTED ] && [ "$PATCHED" = NOTHING_TO_COLLECT ]
+REL=$(python3 -c "import json;print(json.load(open('collector.evidence.json'))['release'])")
+[ "$ORIG" = COLLECTED ] && [ "$PATCHED" = NOTHING_TO_COLLECT ] && [ "$REL" = REVIEW_REQUIRED ]

@@ -16,7 +16,7 @@ def to_dict(res: RunResult, source: str = "") -> dict:
         "initial_status": res.initial_status, "final_status": res.status, "error": res.error,
         "initial_findings": res.initial_findings, "validators_initial": res.validators_initial,
         "attempts": res.attempts, "totals": res.totals(), "wall_s": res.wall_s,
-        "release": res.release, "intent": res.intent, "diff": res.diff, "final_yaml": res.final_yaml, "last_unverified_candidate": res.last_candidate,
+        "release": res.release, "release_note": res.release_note, "validators_complete": res.validators_complete, "intent": res.intent, "diff": res.diff, "final_yaml": res.final_yaml, "last_unverified_candidate": res.last_candidate,
         "events": res.events,
     }
 
@@ -34,6 +34,8 @@ def to_markdown(res: RunResult, source: str = "") -> str:
              f"- Attempts: {len(res.attempts)}  |  Wall time: {res.wall_s}s  |  "
              f"Tokens: {t['total_tokens']} (prompt {t['prompt_tokens']}, completion {t['completion_tokens']})"]
     lines.append(f"- Release decision: **{res.release}**")
+    if res.release_note:
+        lines.append(f"- Note: {res.release_note}")
     if res.error:
         lines.append(f"- Error: {res.error}")
     lines += ["", "## Initial findings", "", "| Rule | Severity | Object | Container | Message |", "|---|---|---|---|---|"]

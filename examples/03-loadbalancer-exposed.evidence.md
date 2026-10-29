@@ -3,7 +3,7 @@
 - Source: `03-loadbalancer-exposed.yaml`
 - Model: `nvidia/nemotron-3-super-120b-a12b`
 - Status: **BLOCKED -> VERIFIED**
-- Attempts: 1  |  Wall time: 2.79s  |  Tokens: 1547 (prompt 1083, completion 464)
+- Attempts: 1  |  Wall time: 3.0s  |  Tokens: 1608 (prompt 1083, completion 525)
 - Release decision: **REVIEW_REQUIRED**
 
 ## Initial findings
@@ -23,14 +23,14 @@
 Initial validators: kubeconform=pass, kube-linter=fail
 
 ## Attempt 1
-- Channel: tool_call  |  LLM latency: 2.63s  |  tokens: 1547
+- Channel: tool_call  |  LLM latency: 2.83s  |  tokens: 1608
 - Verification: PASS
 - Remaining blocking findings: 0
 - kubeconform: pass
 - kube-linter: pass
 - Model rationale:
 
-> Disabled hostNetwork, set automountServiceAccountToken false, added securityContext (runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem), added CPU/Memory limits/requests, pinned image tag, changed Service type to ClusterIP.
+> Fixed hostNetwork, automountServiceAccountToken, added securityContext with runAsNonRoot, non-zero runAsUser, dropped capabilities, set allowPrivilegeEscalation false and readOnlyRootFilesystem true, added resource requests/limits, pinned image tag, changed Service type to ClusterIP.
 
 ## Intent Preservation Gate
 
@@ -40,9 +40,9 @@ Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload d
 |---|---|---|---|
 | high | HOSTNETWORK_REMOVED | Deployment/internal/admin-panel | hostNetwork was turned off: node IP and host ports are no longer used by the workload |
 | medium | SA_TOKEN_DISABLED | Deployment/internal/admin-panel | service account token is no longer mounted: breaks the app if it calls the Kubernetes API |
-| medium | IMAGE_TAG_CHANGED | Deployment/internal/admin-panel container 'web' | image tag changed latest -> v1.0.0: behaviour depends on what that tag contains |
+| medium | IMAGE_TAG_CHANGED | Deployment/internal/admin-panel container 'web' | image tag changed latest -> v1.2.3: behaviour depends on what that tag contains |
 | medium | USER_CHANGED | Deployment/internal/admin-panel container 'web' | now runs as non-root (runAsUser 1000): the image must support that user |
-| medium | ROOTFS_READONLY_NO_WRITABLE_PATH | Deployment/internal/admin-panel container 'web' | root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash |
+| high | ROOTFS_READONLY_NO_WRITABLE_PATH | Deployment/internal/admin-panel container 'web' | root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash |
 | info | LIMITS_ADDED | Deployment/internal/admin-panel container 'web' | resource limits added: too-low values cause OOMKills or CPU throttling |
 | high | SERVICE_EXPOSURE_CHANGED | Service/internal/admin-panel | Service type LoadBalancer -> ClusterIP: clients outside the cluster can no longer reach it |
 
@@ -51,7 +51,12 @@ Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload d
 ```diff
 --- original.yaml
 +++ patched.yaml
-@@ -14,12 +14,25 @@
+@@ -1,4 +1,3 @@
+-# Internal admin panel accidentally exposed to the internet.
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+@@ -14,12 +13,28 @@
        labels:
          app: admin-panel
      spec:
@@ -61,7 +66,7 @@ Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload d
        containers:
          - name: web
 -          image: ghcr.io/example/admin-panel
-+          image: ghcr.io/example/admin-panel:v1.0.0
++          image: ghcr.io/example/admin-panel:v1.2.3
            ports:
              - containerPort: 8080
 +          securityContext:
@@ -69,17 +74,20 @@ Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload d
 +            runAsUser: 1000
 +            allowPrivilegeEscalation: false
 +            readOnlyRootFilesystem: true
++            capabilities:
++              drop:
++                - ALL
 +          resources:
 +            limits:
-+              cpu: 500m
-+              memory: 256Mi
++              cpu: "100m"
++              memory: "128Mi"
 +            requests:
-+              cpu: 250m
-+              memory: 128Mi
++              cpu: "50m"
++              memory: "64Mi"
  ---
  apiVersion: v1
  kind: Service
-@@ -27,9 +40,9 @@
+@@ -27,9 +42,9 @@
    name: admin-panel
    namespace: internal
  spec:

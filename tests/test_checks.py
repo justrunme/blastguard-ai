@@ -99,7 +99,8 @@ def test_samples_are_blocked(samples):
     assert len(samples) >= 3
     expected = {"01-privileged-hostpath.yaml": {"BG001", "BG002", "BG004", "BG010"},
                 "02-latest-root-nolimits.yaml": {"BG005", "BG007", "BG008"},
-                "03-loadbalancer-exposed.yaml": {"BG003", "BG008", "BG012"}}
+                "03-loadbalancer-exposed.yaml": {"BG003", "BG008", "BG012"},
+                "04-stateless-api-missing-limits.yaml": {"BG006", "BG007", "BG011"}}
     for name, text in samples.items():
         assert expected[name] <= rules(text), name
 

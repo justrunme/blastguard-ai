@@ -3,8 +3,8 @@
 - Source: `02-latest-root-nolimits.yaml`
 - Model: `nvidia/nemotron-3-super-120b-a12b`
 - Status: **BLOCKED -> VERIFIED**
-- Attempts: 1  |  Wall time: 2.39s  |  Tokens: 1411 (prompt 997, completion 414)
-- Release decision: **SAFE_TO_PROPOSE**
+- Attempts: 1  |  Wall time: 3.22s  |  Tokens: 1414 (prompt 997, completion 417)
+- Release decision: **REVIEW_REQUIRED**
 
 ## Initial findings
 
@@ -21,25 +21,25 @@
 Initial validators: kubeconform=pass, kube-linter=fail
 
 ## Attempt 1
-- Channel: tool_call  |  LLM latency: 2.24s  |  tokens: 1411
+- Channel: tool_call  |  LLM latency: 3.07s  |  tokens: 1414
 - Verification: PASS
 - Remaining blocking findings: 0
 - kubeconform: pass
 - kube-linter: pass
 - Model rationale:
 
-> Set automountServiceAccountToken false, changed runAsUser to 1000 and runAsNonRoot true, set allowPrivilegeEscalation false, added CPU/memory limits and requests, pinned image tag to nginx:1.23.4, set readOnlyRootFilesystem true.
+> Fixed findings: set automountServiceAccountToken false, changed image tag to specific version, added runAsNonRoot true with non-zero user, set allowPrivilegeEscalation false, readOnlyRootFilesystem true, added CPU/memory limits and requests.
 
 ## Intent Preservation Gate
 
-Verdict: **NO_HIGH_IMPACT_DRIFT**. No high-impact static drift detected. Behaviour in a cluster is still not proven.
+Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload does. Review before proposing.
 
 | Severity | Code | Object | What changed |
 |---|---|---|---|
 | medium | SA_TOKEN_DISABLED | Deployment/payments/payments-api | service account token is no longer mounted: breaks the app if it calls the Kubernetes API |
-| medium | IMAGE_TAG_CHANGED | Deployment/payments/payments-api container 'api' | image tag changed latest -> 1.23.4: behaviour depends on what that tag contains |
+| medium | IMAGE_TAG_CHANGED | Deployment/payments/payments-api container 'api' | image tag changed latest -> 1.25.3: behaviour depends on what that tag contains |
 | medium | USER_CHANGED | Deployment/payments/payments-api container 'api' | now runs as non-root (runAsUser 1000): the image must support that user |
-| medium | ROOTFS_READONLY_NO_WRITABLE_PATH | Deployment/payments/payments-api container 'api' | root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash |
+| high | ROOTFS_READONLY_NO_WRITABLE_PATH | Deployment/payments/payments-api container 'api' | root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash |
 | info | LIMITS_ADDED | Deployment/payments/payments-api container 'api' | resource limits added: too-low values cause OOMKills or CPU throttling |
 
 ## Verified diff
@@ -60,7 +60,7 @@ Verdict: **NO_HIGH_IMPACT_DRIFT**. No high-impact static drift detected. Behavio
        containers:
          - name: api
 -          image: nginx:latest
-+          image: nginx:1.23.4
++          image: nginx:1.25.3
            ports:
              - containerPort: 8080
            securityContext:
@@ -71,9 +71,9 @@ Verdict: **NO_HIGH_IMPACT_DRIFT**. No high-impact static drift detected. Behavio
 +            readOnlyRootFilesystem: true
 +          resources:
 +            limits:
-+              cpu: "100m"
-+              memory: "128Mi"
++              cpu: "500m"
++              memory: "256Mi"
 +            requests:
-+              cpu: "50m"
-+              memory: "64Mi"
++              cpu: "250m"
++              memory: "128Mi"
 ```

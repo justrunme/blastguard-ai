@@ -120,22 +120,27 @@ The app and `scripts/run_real.py` only use the real API.
 Real-API runs are saved in `examples/` (evidence JSON + Markdown per sample, `summary.json`). Any claim about
 fix rates applies only to those samples ("on this corpus").
 
-On this corpus (3 intentionally dangerous manifests, model `nvidia/nemotron-3-super-120b-a12b` through Token
-Factory, `submit_patch` tool call on every attempt):
+On this corpus (4 manifests, model `nvidia/nemotron-3-super-120b-a12b` through Token Factory, `submit_patch`
+tool call), latest real run, see `examples/summary.json`:
 
-| Sample | Blocking findings before | Security result | Release decision (Intent Gate) | High-impact drifts | Attempts | Tokens |
+| Sample | Blocking findings before | Security result | Release decision | High-impact drifts | Attempts | Tokens |
 |---|---|---|---|---|---|---|
-| 01-privileged-hostpath | 9 | VERIFIED | **REVIEW_REQUIRED** | `hostPath: /` replaced by `emptyDir`; privileged removed | 1 | see `examples/summary.json` |
-| 02-latest-root-nolimits | 6 | VERIFIED | SAFE_TO_PROPOSE (no high-impact static drift) | none (image tag `latest` → pinned, non-root, limits are medium/info) | 1 | |
-| 03-loadbalancer-exposed | 8 | VERIFIED | **REVIEW_REQUIRED** | `LoadBalancer` → `ClusterIP`; hostNetwork removed | 1 | |
+| 01-privileged-hostpath | 9 | VERIFIED | **REVIEW_REQUIRED** | `HOSTPATH_REPLACED`, `PRIVILEGED_REMOVED` | 1 | 1635 |
+| 02-latest-root-nolimits | 6 | VERIFIED | **REVIEW_REQUIRED** | `ROOTFS_READONLY_NO_WRITABLE_PATH` | 1 | 1414 |
+| 03-loadbalancer-exposed | 8 | VERIFIED | **REVIEW_REQUIRED** | `HOSTNETWORK_REMOVED`, `ROOTFS_READONLY_NO_WRITABLE_PATH`, `SERVICE_EXPOSURE_CHANGED` | 1 | 1608 |
+| 04-stateless-api-missing-limits | 3 | VERIFIED | SAFE_TO_PROPOSE | none | 2 | 2948 |
 
-All three passed security verification on the first attempt, so the retry path (feedback to the model after a failed
-verification) was not exercised against the real model on this corpus; it is covered only by the fake-client tests.
-Three samples is a smoke test, not an evaluation. "SAFE_TO_PROPOSE" means no high-impact *static* drift was found,
-not that the workload was tested in a cluster. The second and third real runs reproduced the same verdicts.
+Samples 01 to 03 are intentionally dangerous; sample 04 is a mostly hardened API and is the only one that reaches
+SAFE_TO_PROPOSE. In the latest run, sample 04 needed two attempts: attempt 1 failed kube-linter, and the failure
+was fed back to the model (the first time the retry path was exercised by the real model). Release decisions were
+stable across the real runs we did, but earlier runs differed in attempt counts and tokens, and the model is
+non-deterministic. This is a smoke test, not an evaluation (a larger benchmark is in progress).
 
-The point of the gate: in sample 01 the model's patch is secure but would break a real log collector. Without the
-gate that run would be reported as a plain success.
+SAFE_TO_PROPOSE requires: security verification passed, every external validator (kubeconform, kube-linter) ran
+and passed, and the Intent Gate found no high-impact static drift. If a validator is missing or errors, the
+release decision is REVIEW_REQUIRED with an "incomplete verification" note. It does not mean the workload was
+tested in a cluster. Read-only root filesystem without a writable mount is a high-impact drift, so a hardened
+nginx patch (sample 02) is sent to human review.
 
 ## What existed before / what was built during the Submission Period
 

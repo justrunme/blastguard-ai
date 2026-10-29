@@ -55,9 +55,27 @@ class RunResult:
         """Final decision: security status AND intent preservation."""
         if self.status != VERIFIED:
             return "NOT_PROPOSED" if self.status == UNRESOLVED else "BLOCKED"
-        if self.intent and self.intent["verdict"] == REVIEW_REQUIRED:
+        if self.intent is None or self.intent["verdict"] == REVIEW_REQUIRED:
+            return "REVIEW_REQUIRED"
+        if not self.validators_complete:
             return "REVIEW_REQUIRED"
         return "SAFE_TO_PROPOSE"
+
+    @property
+    def validators_complete(self) -> bool:
+        """True only if every external validator ran and passed on the accepted patch (fail closed)."""
+        if not self.attempts:
+            return False
+        vals = (self.attempts[-1].get("verification") or {}).get("validators") or []
+        return bool(vals) and all(v.get("status") == "pass" for v in vals)
+
+    @property
+    def release_note(self) -> str:
+        if self.status == VERIFIED and self.release == "REVIEW_REQUIRED" and \
+                self.intent is not None and self.intent["verdict"] != REVIEW_REQUIRED and not self.validators_complete:
+            return ("Incomplete verification: an external validator (kubeconform or kube-linter) did not run or "
+                    "did not pass, so this cannot be marked safe to propose. A human must review.")
+        return ""
 
     def totals(self) -> dict:
         t = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "llm_latency_s": 0.0}

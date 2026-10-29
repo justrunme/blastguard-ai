@@ -1,7 +1,7 @@
 {
   "tool": "blastguard-ai",
   "version": "0.1.0",
-  "generated_at": "2026-10-29T03:09:02+00:00",
+  "generated_at": "2026-10-29T03:19:00+00:00",
   "source": "03-loadbalancer-exposed.yaml",
   "model": "nvidia/nemotron-3-super-120b-a12b",
   "initial_status": "BLOCKED",
@@ -106,15 +106,15 @@
     {
       "attempt": 1,
       "feedback_given": [],
-      "llm_latency_s": 2.63,
+      "llm_latency_s": 2.83,
       "usage": {
-        "completion_tokens": 464,
+        "completion_tokens": 525,
         "prompt_tokens": 1083,
-        "total_tokens": 1547,
+        "total_tokens": 1608,
         "completion_tokens_details": {
           "accepted_prediction_tokens": null,
           "audio_tokens": null,
-          "reasoning_tokens": 92,
+          "reasoning_tokens": 154,
           "rejected_prediction_tokens": null,
           "text_tokens": null
         },
@@ -131,8 +131,8 @@
         "prompt_cache_miss_tokens": 27
       },
       "channel": "tool_call",
-      "rationale": "Disabled hostNetwork, set automountServiceAccountToken false, added securityContext (runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem), added CPU/Memory limits/requests, pinned image tag, changed Service type to ClusterIP.",
-      "proposed_yaml": "# Internal admin panel accidentally exposed to the internet.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: admin-panel\n  template:\n    metadata:\n      labels:\n        app: admin-panel\n    spec:\n      hostNetwork: false\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: ghcr.io/example/admin-panel:v1.0.0\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: 500m\n              memory: 256Mi\n            requests:\n              cpu: 250m\n              memory: 128Mi\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  type: ClusterIP\n  selector:\n    app: admin-panel\n  ports:\n    - port: 80\n      targetPort: 8080",
+      "rationale": "Fixed hostNetwork, automountServiceAccountToken, added securityContext with runAsNonRoot, non-zero runAsUser, dropped capabilities, set allowPrivilegeEscalation false and readOnlyRootFilesystem true, added resource requests/limits, pinned image tag, changed Service type to ClusterIP.",
+      "proposed_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: admin-panel\n  template:\n    metadata:\n      labels:\n        app: admin-panel\n    spec:\n      hostNetwork: false\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: ghcr.io/example/admin-panel:v1.2.3\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n            capabilities:\n              drop:\n                - ALL\n          resources:\n            limits:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"50m\"\n              memory: \"64Mi\"\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  type: ClusterIP\n  selector:\n    app: admin-panel\n  ports:\n    - port: 80\n      targetPort: 8080",
       "verification": {
         "ok": true,
         "findings": [
@@ -166,12 +166,14 @@
   ],
   "totals": {
     "prompt_tokens": 1083,
-    "completion_tokens": 464,
-    "total_tokens": 1547,
-    "llm_latency_s": 2.63
+    "completion_tokens": 525,
+    "total_tokens": 1608,
+    "llm_latency_s": 2.83
   },
-  "wall_s": 2.79,
+  "wall_s": 3.0,
   "release": "REVIEW_REQUIRED",
+  "release_note": "",
+  "validators_complete": true,
   "intent": {
     "verdict": "REVIEW_REQUIRED",
     "drifts": [
@@ -191,7 +193,7 @@
         "code": "IMAGE_TAG_CHANGED",
         "severity": "medium",
         "object": "Deployment/internal/admin-panel container 'web'",
-        "detail": "image tag changed latest -> v1.0.0: behaviour depends on what that tag contains"
+        "detail": "image tag changed latest -> v1.2.3: behaviour depends on what that tag contains"
       },
       {
         "code": "USER_CHANGED",
@@ -201,7 +203,7 @@
       },
       {
         "code": "ROOTFS_READONLY_NO_WRITABLE_PATH",
-        "severity": "medium",
+        "severity": "high",
         "object": "Deployment/internal/admin-panel container 'web'",
         "detail": "root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash"
       },
@@ -221,16 +223,16 @@
     "error": null,
     "note": "A security-clean patch changed what the workload does. Review before proposing."
   },
-  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -14,12 +14,25 @@\n       labels:\n         app: admin-panel\n     spec:\n-      hostNetwork: true\n+      hostNetwork: false\n+      automountServiceAccountToken: false\n       containers:\n         - name: web\n-          image: ghcr.io/example/admin-panel\n+          image: ghcr.io/example/admin-panel:v1.0.0\n           ports:\n             - containerPort: 8080\n+          securityContext:\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: 500m\n+              memory: 256Mi\n+            requests:\n+              cpu: 250m\n+              memory: 128Mi\n ---\n apiVersion: v1\n kind: Service\n@@ -27,9 +40,9 @@\n   name: admin-panel\n   namespace: internal\n spec:\n-  type: LoadBalancer\n+  type: ClusterIP\n   selector:\n     app: admin-panel\n   ports:\n     - port: 80\n-      targetPort: 8080\n+      targetPort: 8080",
-  "final_yaml": "# Internal admin panel accidentally exposed to the internet.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: admin-panel\n  template:\n    metadata:\n      labels:\n        app: admin-panel\n    spec:\n      hostNetwork: false\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: ghcr.io/example/admin-panel:v1.0.0\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: 500m\n              memory: 256Mi\n            requests:\n              cpu: 250m\n              memory: 128Mi\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  type: ClusterIP\n  selector:\n    app: admin-panel\n  ports:\n    - port: 80\n      targetPort: 8080",
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,4 +1,3 @@\n-# Internal admin panel accidentally exposed to the internet.\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -14,12 +13,28 @@\n       labels:\n         app: admin-panel\n     spec:\n-      hostNetwork: true\n+      hostNetwork: false\n+      automountServiceAccountToken: false\n       containers:\n         - name: web\n-          image: ghcr.io/example/admin-panel\n+          image: ghcr.io/example/admin-panel:v1.2.3\n           ports:\n             - containerPort: 8080\n+          securityContext:\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+            capabilities:\n+              drop:\n+                - ALL\n+          resources:\n+            limits:\n+              cpu: \"100m\"\n+              memory: \"128Mi\"\n+            requests:\n+              cpu: \"50m\"\n+              memory: \"64Mi\"\n ---\n apiVersion: v1\n kind: Service\n@@ -27,9 +42,9 @@\n   name: admin-panel\n   namespace: internal\n spec:\n-  type: LoadBalancer\n+  type: ClusterIP\n   selector:\n     app: admin-panel\n   ports:\n     - port: 80\n-      targetPort: 8080\n+      targetPort: 8080",
+  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: admin-panel\n  template:\n    metadata:\n      labels:\n        app: admin-panel\n    spec:\n      hostNetwork: false\n      automountServiceAccountToken: false\n      containers:\n        - name: web\n          image: ghcr.io/example/admin-panel:v1.2.3\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n            capabilities:\n              drop:\n                - ALL\n          resources:\n            limits:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"50m\"\n              memory: \"64Mi\"\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: admin-panel\n  namespace: internal\nspec:\n  type: ClusterIP\n  selector:\n    app: admin-panel\n  ports:\n    - port: 80\n      targetPort: 8080",
   "last_unverified_candidate": null,
   "events": [
     "[   0.1s] Deterministic checks: 9 findings (8 blocking)",
     "[   0.1s] Validator kubeconform: pass",
     "[   0.1s] Validator kube-linter: fail",
     "[   0.1s] Attempt 1/3: asking nvidia/nemotron-3-super-120b-a12b for a patch",
-    "[   2.8s] Attempt 1 verification: PASS (blocking=0, guard=0, parse_error=None)",
-    "[   2.8s] Intent gate: REVIEW_REQUIRED (7 drifts)",
-    "[   2.8s] Final status: VERIFIED"
+    "[   3.0s] Attempt 1 verification: PASS (blocking=0, guard=0, parse_error=None)",
+    "[   3.0s] Intent gate: REVIEW_REQUIRED (7 drifts)",
+    "[   3.0s] Final status: VERIFIED"
   ]
 }

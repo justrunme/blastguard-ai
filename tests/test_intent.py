@@ -122,13 +122,26 @@ def test_privileged_removal_is_high_but_caps_drop_alone_is_not():
     assert "PRIVILEGED_REMOVED" in codes(r) and r["verdict"] == REVIEW_REQUIRED
 
 
-def test_readonly_rootfs_without_writable_mount_is_medium_and_not_gating():
+def test_readonly_rootfs_without_writable_mount_gates_the_release():
     base = mutate(DEPLOY, lambda d: d["spec"]["template"]["spec"].update(volumes=[]) or
                   d["spec"]["template"]["spec"]["containers"][0].update(volumeMounts=[]))
     new = mutate(DEPLOY, lambda d: d["spec"]["template"]["spec"].update(volumes=[]) or
                  d["spec"]["template"]["spec"]["containers"][0].update(volumeMounts=[], securityContext={"readOnlyRootFilesystem": True}))
     r = intent_report(base, new)
-    assert "ROOTFS_READONLY_NO_WRITABLE_PATH" in codes(r) and r["verdict"] == NO_HIGH_IMPACT_DRIFT
+    assert "ROOTFS_READONLY_NO_WRITABLE_PATH" in codes(r) and r["verdict"] == REVIEW_REQUIRED
+
+
+def test_readonly_rootfs_with_writable_tmp_does_not_gate():
+    def add_tmp(d):
+        ps = d["spec"]["template"]["spec"]
+        ps["volumes"] = [{"name": "tmp", "emptyDir": {}}]
+        ps["containers"][0]["volumeMounts"] = [{"name": "tmp", "mountPath": "/tmp"}]
+        ps["containers"][0]["securityContext"] = {"readOnlyRootFilesystem": True}
+    def no_vols(d):
+        d["spec"]["template"]["spec"]["volumes"] = []
+        d["spec"]["template"]["spec"]["containers"][0]["volumeMounts"] = []
+    r = intent_report(mutate(DEPLOY, no_vols), mutate(DEPLOY, lambda d: (no_vols(d), add_tmp(d))))
+    assert "ROOTFS_READONLY_NO_WRITABLE_PATH" not in codes(r) and r["verdict"] == NO_HIGH_IMPACT_DRIFT
 
 
 def test_gate_fails_closed_on_malformed_structure():
@@ -147,7 +160,7 @@ def test_removed_objects_are_left_to_identity_guard():
 
 @pytest.mark.parametrize("sample,verdict", [
     ("01-privileged-hostpath", REVIEW_REQUIRED),
-    ("02-latest-root-nolimits", NO_HIGH_IMPACT_DRIFT),
+    ("02-latest-root-nolimits", REVIEW_REQUIRED),
     ("03-loadbalancer-exposed", REVIEW_REQUIRED),
 ])
 def test_real_nemotron_patches_in_examples(sample, verdict):
@@ -168,3 +181,27 @@ def test_loop_reports_review_required_release(samples):
 def test_unverified_run_has_no_intent_and_is_not_proposed(samples):
     res = run_remediation(samples["01-privileged-hostpath.yaml"], ScriptedFakeClient(["garbage"] * 3))
     assert res.intent is None and res.release == "NOT_PROPOSED"
+
+
+def _run_sample04_with_validators(monkeypatch, samples, status):
+    from blastguard_ai import validators
+    ev = json.loads((ROOT / "examples" / "04-stateless-api-missing-limits.evidence.json").read_text())
+    monkeypatch.setattr(validators, "run_all",
+                        lambda path: [validators.ValidatorResult("kubeconform", status),
+                                      validators.ValidatorResult("kube-linter", status)])
+    return run_remediation(samples["04-stateless-api-missing-limits.yaml"], ScriptedFakeClient([ev["final_yaml"]]))
+
+
+def test_missing_validators_cannot_produce_safe_to_propose(monkeypatch, samples):
+    res = _run_sample04_with_validators(monkeypatch, samples, "not_installed")
+    assert res.status == "VERIFIED" and res.intent["verdict"] == NO_HIGH_IMPACT_DRIFT
+    assert res.release == "REVIEW_REQUIRED" and "Incomplete verification" in res.release_note
+
+
+def test_validator_error_cannot_produce_safe_to_propose(monkeypatch, samples):
+    assert _run_sample04_with_validators(monkeypatch, samples, "error").release == "REVIEW_REQUIRED"
+
+
+def test_all_validators_pass_gives_safe_to_propose(monkeypatch, samples):
+    res = _run_sample04_with_validators(monkeypatch, samples, "pass")
+    assert res.release == "SAFE_TO_PROPOSE" and res.release_note == ""

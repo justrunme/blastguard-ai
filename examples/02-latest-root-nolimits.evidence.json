@@ -1,7 +1,7 @@
 {
   "tool": "blastguard-ai",
   "version": "0.1.0",
-  "generated_at": "2026-10-29T03:08:59+00:00",
+  "generated_at": "2026-10-29T03:18:57+00:00",
   "source": "02-latest-root-nolimits.yaml",
   "model": "nvidia/nemotron-3-super-120b-a12b",
   "initial_status": "BLOCKED",
@@ -89,33 +89,33 @@
     {
       "attempt": 1,
       "feedback_given": [],
-      "llm_latency_s": 2.24,
+      "llm_latency_s": 3.07,
       "usage": {
-        "completion_tokens": 414,
+        "completion_tokens": 417,
         "prompt_tokens": 997,
-        "total_tokens": 1411,
+        "total_tokens": 1414,
         "completion_tokens_details": {
           "accepted_prediction_tokens": null,
           "audio_tokens": null,
-          "reasoning_tokens": 123,
+          "reasoning_tokens": 134,
           "rejected_prediction_tokens": null,
           "text_tokens": null
         },
         "prompt_tokens_details": {
           "audio_tokens": null,
           "cache_write_tokens": null,
-          "cached_tokens": 0,
+          "cached_tokens": 976,
           "image_tokens": null,
           "text_tokens": null,
           "created_cache_tokens": 0,
           "multimodal_tokens": null
         },
-        "prompt_cache_hit_tokens": 0,
-        "prompt_cache_miss_tokens": 997
+        "prompt_cache_hit_tokens": 976,
+        "prompt_cache_miss_tokens": 21
       },
       "channel": "tool_call",
-      "rationale": "Set automountServiceAccountToken false, changed runAsUser to 1000 and runAsNonRoot true, set allowPrivilegeEscalation false, added CPU/memory limits and requests, pinned image tag to nginx:1.23.4, set readOnlyRootFilesystem true.",
-      "proposed_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: payments-api\n  namespace: payments\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: payments-api\n  template:\n    metadata:\n      labels:\n        app: payments-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: nginx:1.23.4\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"50m\"\n              memory: \"64Mi\"\n",
+      "rationale": "Fixed findings: set automountServiceAccountToken false, changed image tag to specific version, added runAsNonRoot true with non-zero user, set allowPrivilegeEscalation false, readOnlyRootFilesystem true, added CPU/memory limits and requests.",
+      "proposed_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: payments-api\n  namespace: payments\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: payments-api\n  template:\n    metadata:\n      labels:\n        app: payments-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: nginx:1.25.3\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"128Mi\"\n",
       "verification": {
         "ok": true,
         "findings": [
@@ -149,14 +149,16 @@
   ],
   "totals": {
     "prompt_tokens": 997,
-    "completion_tokens": 414,
-    "total_tokens": 1411,
-    "llm_latency_s": 2.24
+    "completion_tokens": 417,
+    "total_tokens": 1414,
+    "llm_latency_s": 3.07
   },
-  "wall_s": 2.39,
-  "release": "SAFE_TO_PROPOSE",
+  "wall_s": 3.22,
+  "release": "REVIEW_REQUIRED",
+  "release_note": "",
+  "validators_complete": true,
   "intent": {
-    "verdict": "NO_HIGH_IMPACT_DRIFT",
+    "verdict": "REVIEW_REQUIRED",
     "drifts": [
       {
         "code": "SA_TOKEN_DISABLED",
@@ -168,7 +170,7 @@
         "code": "IMAGE_TAG_CHANGED",
         "severity": "medium",
         "object": "Deployment/payments/payments-api container 'api'",
-        "detail": "image tag changed latest -> 1.23.4: behaviour depends on what that tag contains"
+        "detail": "image tag changed latest -> 1.25.3: behaviour depends on what that tag contains"
       },
       {
         "code": "USER_CHANGED",
@@ -178,7 +180,7 @@
       },
       {
         "code": "ROOTFS_READONLY_NO_WRITABLE_PATH",
-        "severity": "medium",
+        "severity": "high",
         "object": "Deployment/payments/payments-api container 'api'",
         "detail": "root filesystem is read-only and no writable volume is mounted: apps that write temp/log/cache files will crash"
       },
@@ -190,18 +192,18 @@
       }
     ],
     "error": null,
-    "note": "No high-impact static drift detected. Behaviour in a cluster is still not proven."
+    "note": "A security-clean patch changed what the workload does. Review before proposing."
   },
-  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,4 +1,3 @@\n-# API deployment: floating image tag, runs as root, unbounded resources.\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -14,10 +13,21 @@\n       labels:\n         app: payments-api\n     spec:\n+      automountServiceAccountToken: false\n       containers:\n         - name: api\n-          image: nginx:latest\n+          image: nginx:1.23.4\n           ports:\n             - containerPort: 8080\n           securityContext:\n-            runAsUser: 0\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: \"100m\"\n+              memory: \"128Mi\"\n+            requests:\n+              cpu: \"50m\"\n+              memory: \"64Mi\"\n",
-  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: payments-api\n  namespace: payments\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: payments-api\n  template:\n    metadata:\n      labels:\n        app: payments-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: nginx:1.23.4\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            requests:\n              cpu: \"50m\"\n              memory: \"64Mi\"\n",
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -1,4 +1,3 @@\n-# API deployment: floating image tag, runs as root, unbounded resources.\n apiVersion: apps/v1\n kind: Deployment\n metadata:\n@@ -14,10 +13,21 @@\n       labels:\n         app: payments-api\n     spec:\n+      automountServiceAccountToken: false\n       containers:\n         - name: api\n-          image: nginx:latest\n+          image: nginx:1.25.3\n           ports:\n             - containerPort: 8080\n           securityContext:\n-            runAsUser: 0\n+            runAsNonRoot: true\n+            runAsUser: 1000\n+            allowPrivilegeEscalation: false\n+            readOnlyRootFilesystem: true\n+          resources:\n+            limits:\n+              cpu: \"500m\"\n+              memory: \"256Mi\"\n+            requests:\n+              cpu: \"250m\"\n+              memory: \"128Mi\"\n",
+  "final_yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: payments-api\n  namespace: payments\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: payments-api\n  template:\n    metadata:\n      labels:\n        app: payments-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: nginx:1.25.3\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 1000\n            allowPrivilegeEscalation: false\n            readOnlyRootFilesystem: true\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"128Mi\"\n",
   "last_unverified_candidate": null,
   "events": [
     "[   0.1s] Deterministic checks: 7 findings (6 blocking)",
     "[   0.1s] Validator kubeconform: pass",
     "[   0.1s] Validator kube-linter: fail",
     "[   0.1s] Attempt 1/3: asking nvidia/nemotron-3-super-120b-a12b for a patch",
-    "[   2.4s] Attempt 1 verification: PASS (blocking=0, guard=0, parse_error=None)",
-    "[   2.4s] Intent gate: NO_HIGH_IMPACT_DRIFT (5 drifts)",
-    "[   2.4s] Final status: VERIFIED"
+    "[   3.2s] Attempt 1 verification: PASS (blocking=0, guard=0, parse_error=None)",
+    "[   3.2s] Intent gate: REVIEW_REQUIRED (5 drifts)",
+    "[   3.2s] Final status: VERIFIED"
   ]
 }

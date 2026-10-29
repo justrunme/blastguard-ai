@@ -3,7 +3,7 @@
 - Source: `01-privileged-hostpath.yaml`
 - Model: `nvidia/nemotron-3-super-120b-a12b`
 - Status: **BLOCKED -> VERIFIED**
-- Attempts: 1  |  Wall time: 3.74s  |  Tokens: 1635 (prompt 1148, completion 487)
+- Attempts: 1  |  Wall time: 3.85s  |  Tokens: 1635 (prompt 1148, completion 487)
 - Release decision: **REVIEW_REQUIRED**
 
 ## Initial findings
@@ -24,14 +24,14 @@
 Initial validators: kubeconform=pass, kube-linter=fail
 
 ## Attempt 1
-- Channel: tool_call  |  LLM latency: 3.56s  |  tokens: 1635
+- Channel: tool_call  |  LLM latency: 3.68s  |  tokens: 1635
 - Verification: PASS
 - Remaining blocking findings: 0
 - kubeconform: pass
 - kube-linter: pass
 - Model rationale:
 
-> Replaced hostPath with emptyDir, disabled hostPID, removed privileged flag, dropped SYS_ADMIN capability, set runAsNonRoot true with non-zero UID, set allowPrivilegeEscalation false, readOnlyRootFilesystem true, added automountServiceAccountToken false, added CPU/memory requests and limits.
+> Removed privileged, hostPID, hostPath replaced with emptyDir, set automountServiceAccountToken false, added runAsNonRoot, non-zero runAsUser, allowPrivilegeEscalation false, readOnlyRootFilesystem true, dropped all capabilities, added CPU/Memory limits and requests.
 
 ## Intent Preservation Gate
 
@@ -57,12 +57,11 @@ Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload d
  apiVersion: apps/v1
  kind: DaemonSet
  metadata:
-@@ -13,18 +12,29 @@
+@@ -13,18 +12,28 @@
        labels:
          app: log-collector
      spec:
 -      hostPID: true
-+      hostPID: false
 +      automountServiceAccountToken: false
        containers:
          - name: collector
@@ -81,12 +80,12 @@ Verdict: **REVIEW_REQUIRED**. A security-clean patch changed what the workload d
              - name: host-root
                mountPath: /host
 +          resources:
-+            requests:
-+              cpu: "100m"
-+              memory: "128Mi"
 +            limits:
-+              cpu: "200m"
++              cpu: "500m"
 +              memory: "256Mi"
++            requests:
++              cpu: "200m"
++              memory: "128Mi"
        volumes:
          - name: host-root
 -          hostPath:

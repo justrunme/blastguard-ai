@@ -128,7 +128,7 @@ if res:
     st.markdown(f'{badge(res.initial_status)}<span class="bg-arrow">→</span>{badge(res.status)}',
                 unsafe_allow_html=True)
     st.markdown(f'**Release decision:** {badge(res.release)}', unsafe_allow_html=True)
-    st.caption(RELEASE_TEXT[res.release])
+    st.caption(res.release_note or RELEASE_TEXT[res.release])
     m = st.columns(5)
     m[0].metric("Initial findings", len([f for f in res.initial_findings if f["blocking"]]))
     last = res.attempts[-1].get("verification", {}) if res.attempts else {}

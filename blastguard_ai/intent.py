@@ -125,7 +125,7 @@ def _container_drifts(obj: str, wl: dict, oc: dict, nc: dict, n_ps: dict) -> lis
         writable = any(_source(n_vols.get(str(m.get("name")), {})) in WRITABLE_SOURCES and m.get("readOnly") is not True
                        for m in _dicts(nc.get("volumeMounts")))
         if not writable:
-            out.append(_drift("ROOTFS_READONLY_NO_WRITABLE_PATH", MEDIUM, name,
+            out.append(_drift("ROOTFS_READONLY_NO_WRITABLE_PATH", HIGH, name,
                               "root filesystem is read-only and no writable volume is mounted: apps that write "
                               "temp/log/cache files will crash"))
     if not (oc.get("resources") or {}).get("limits") and (nc.get("resources") or {}).get("limits"):

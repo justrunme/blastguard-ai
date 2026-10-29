@@ -9,21 +9,21 @@
     "prompt_tokens": 1148,
     "completion_tokens": 487,
     "total_tokens": 1635,
-    "llm_latency_s": 3.56,
-    "wall_s": 3.74
+    "llm_latency_s": 3.68,
+    "wall_s": 3.85
   },
   {
     "sample": "02-latest-root-nolimits.yaml",
     "initial": "BLOCKED",
     "final": "VERIFIED",
     "attempts": 1,
-    "release": "SAFE_TO_PROPOSE",
+    "release": "REVIEW_REQUIRED",
     "error": null,
     "prompt_tokens": 997,
-    "completion_tokens": 414,
-    "total_tokens": 1411,
-    "llm_latency_s": 2.24,
-    "wall_s": 2.39
+    "completion_tokens": 417,
+    "total_tokens": 1414,
+    "llm_latency_s": 3.07,
+    "wall_s": 3.22
   },
   {
     "sample": "03-loadbalancer-exposed.yaml",
@@ -33,9 +33,22 @@
     "release": "REVIEW_REQUIRED",
     "error": null,
     "prompt_tokens": 1083,
-    "completion_tokens": 464,
-    "total_tokens": 1547,
-    "llm_latency_s": 2.63,
-    "wall_s": 2.79
+    "completion_tokens": 525,
+    "total_tokens": 1608,
+    "llm_latency_s": 2.83,
+    "wall_s": 3.0
+  },
+  {
+    "sample": "04-stateless-api-missing-limits.yaml",
+    "initial": "BLOCKED",
+    "final": "VERIFIED",
+    "attempts": 2,
+    "release": "SAFE_TO_PROPOSE",
+    "error": null,
+    "prompt_tokens": 2051,
+    "completion_tokens": 897,
+    "total_tokens": 2948,
+    "llm_latency_s": 5.69,
+    "wall_s": 5.93
   }
 ]

@@ -1,0 +1,230 @@
+{
+  "tool": "blastguard-ai",
+  "version": "0.1.0",
+  "generated_at": "2026-10-29T03:19:06+00:00",
+  "source": "04-stateless-api-missing-limits.yaml",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "initial_status": "BLOCKED",
+  "final_status": "VERIFIED",
+  "error": null,
+  "initial_findings": [
+    {
+      "rule_id": "BG011",
+      "severity": "medium",
+      "object": "Deployment/orders/orders-api",
+      "container": "-",
+      "message": "Service account token automounted: set automountServiceAccountToken: false unless the API is needed",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG006",
+      "severity": "high",
+      "object": "Deployment/orders/orders-api",
+      "container": "api",
+      "message": "allowPrivilegeEscalation not explicitly false",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG007",
+      "severity": "medium",
+      "object": "Deployment/orders/orders-api",
+      "container": "api",
+      "message": "Missing CPU/memory limits: missing cpu,memory",
+      "blocking": true
+    },
+    {
+      "rule_id": "BG013",
+      "severity": "info",
+      "object": "bundle",
+      "container": "-",
+      "message": "No NetworkPolicy in this manifest bundle: consider a default-deny NetworkPolicy",
+      "blocking": false
+    }
+  ],
+  "validators_initial": [
+    {
+      "name": "kubeconform",
+      "status": "pass",
+      "issues": [],
+      "detail": "{\"valid\": 1, \"invalid\": 0, \"errors\": 0, \"skipped\": 0}"
+    },
+    {
+      "name": "kube-linter",
+      "status": "fail",
+      "issues": [
+        "unset-cpu-requirements: Deployment/orders-api: container \"api\" has cpu request 0",
+        "unset-memory-requirements: Deployment/orders-api: container \"api\" has memory limit 0"
+      ],
+      "detail": ""
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "feedback_given": [],
+      "llm_latency_s": 2.11,
+      "usage": {
+        "completion_tokens": 381,
+        "prompt_tokens": 980,
+        "total_tokens": 1361,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 63,
+          "rejected_prediction_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 0,
+          "image_tokens": null,
+          "text_tokens": null,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 980
+      },
+      "channel": "tool_call",
+      "rationale": "Added automountServiceAccountToken: false, set allowPrivilegeEscalation: false, added CPU/memory limits.",
+      "proposed_yaml": "# Mostly hardened stateless API: pinned image, non-root, read-only root filesystem with a writable /tmp.\n# Remaining problems: no resource limits, privilege escalation not disabled, service account token automounted.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\n  namespace: orders\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/orders-api:1.4.2\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            readOnlyRootFilesystem: true\n            allowPrivilegeEscalation: false\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+      "verification": {
+        "ok": false,
+        "findings": [
+          {
+            "rule_id": "BG013",
+            "severity": "info",
+            "object": "bundle",
+            "container": "-",
+            "message": "No NetworkPolicy in this manifest bundle: consider a default-deny NetworkPolicy",
+            "blocking": false
+          }
+        ],
+        "guard": [],
+        "validators": [
+          {
+            "name": "kubeconform",
+            "status": "pass",
+            "issues": [],
+            "detail": "{\"valid\": 1, \"invalid\": 0, \"errors\": 0, \"skipped\": 0}"
+          },
+          {
+            "name": "kube-linter",
+            "status": "fail",
+            "issues": [
+              "unset-cpu-requirements: Deployment/orders-api: container \"api\" has cpu request 0"
+            ],
+            "detail": ""
+          }
+        ],
+        "parse_error": null
+      }
+    },
+    {
+      "attempt": 2,
+      "feedback_given": [
+        "kube-linter: unset-cpu-requirements: Deployment/orders-api: container \"api\" has cpu request 0"
+      ],
+      "llm_latency_s": 3.58,
+      "usage": {
+        "completion_tokens": 516,
+        "prompt_tokens": 1071,
+        "total_tokens": 1587,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 183,
+          "rejected_prediction_tokens": null,
+          "text_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 0,
+          "image_tokens": null,
+          "text_tokens": null,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 1071
+      },
+      "channel": "tool_call",
+      "rationale": "Added CPU and memory requests to satisfy resource requirements; kept existing limits and other security settings unchanged.",
+      "proposed_yaml": "# Mostly hardened stateless API: pinned image, non-root, read-only root filesystem with a writable /tmp.\n# Remaining problems: no resource limits, privilege escalation not disabled, service account token automounted.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\n  namespace: orders\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/orders-api:1.4.2\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            readOnlyRootFilesystem: true\n            allowPrivilegeEscalation: false\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"128Mi\"\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+      "verification": {
+        "ok": true,
+        "findings": [
+          {
+            "rule_id": "BG013",
+            "severity": "info",
+            "object": "bundle",
+            "container": "-",
+            "message": "No NetworkPolicy in this manifest bundle: consider a default-deny NetworkPolicy",
+            "blocking": false
+          }
+        ],
+        "guard": [],
+        "validators": [
+          {
+            "name": "kubeconform",
+            "status": "pass",
+            "issues": [],
+            "detail": "{\"valid\": 1, \"invalid\": 0, \"errors\": 0, \"skipped\": 0}"
+          },
+          {
+            "name": "kube-linter",
+            "status": "pass",
+            "issues": [],
+            "detail": ""
+          }
+        ],
+        "parse_error": null
+      }
+    }
+  ],
+  "totals": {
+    "prompt_tokens": 2051,
+    "completion_tokens": 897,
+    "total_tokens": 2948,
+    "llm_latency_s": 5.69
+  },
+  "wall_s": 5.93,
+  "release": "SAFE_TO_PROPOSE",
+  "release_note": "",
+  "validators_complete": true,
+  "intent": {
+    "verdict": "NO_HIGH_IMPACT_DRIFT",
+    "drifts": [
+      {
+        "code": "SA_TOKEN_DISABLED",
+        "severity": "medium",
+        "object": "Deployment/orders/orders-api",
+        "detail": "service account token is no longer mounted: breaks the app if it calls the Kubernetes API"
+      },
+      {
+        "code": "LIMITS_ADDED",
+        "severity": "info",
+        "object": "Deployment/orders/orders-api container 'api'",
+        "detail": "resource limits added: too-low values cause OOMKills or CPU throttling"
+      }
+    ],
+    "error": null,
+    "note": "No high-impact static drift detected. Behaviour in a cluster is still not proven."
+  },
+  "diff": "--- original.yaml\n+++ patched.yaml\n@@ -15,6 +15,7 @@\n       labels:\n         app: orders-api\n     spec:\n+      automountServiceAccountToken: false\n       containers:\n         - name: api\n           image: ghcr.io/example/orders-api:1.4.2\n@@ -24,9 +25,17 @@\n             runAsNonRoot: true\n             runAsUser: 10001\n             readOnlyRootFilesystem: true\n+            allowPrivilegeEscalation: false\n           volumeMounts:\n             - name: tmp\n               mountPath: /tmp\n+          resources:\n+            limits:\n+              cpu: \"500m\"\n+              memory: \"256Mi\"\n+            requests:\n+              cpu: \"250m\"\n+              memory: \"128Mi\"\n       volumes:\n         - name: tmp\n-          emptyDir: {}\n+          emptyDir: {}",
+  "final_yaml": "# Mostly hardened stateless API: pinned image, non-root, read-only root filesystem with a writable /tmp.\n# Remaining problems: no resource limits, privilege escalation not disabled, service account token automounted.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\n  namespace: orders\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/orders-api:1.4.2\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            readOnlyRootFilesystem: true\n            allowPrivilegeEscalation: false\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n            requests:\n              cpu: \"250m\"\n              memory: \"128Mi\"\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "last_unverified_candidate": "# Mostly hardened stateless API: pinned image, non-root, read-only root filesystem with a writable /tmp.\n# Remaining problems: no resource limits, privilege escalation not disabled, service account token automounted.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\n  namespace: orders\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      automountServiceAccountToken: false\n      containers:\n        - name: api\n          image: ghcr.io/example/orders-api:1.4.2\n          ports:\n            - containerPort: 8080\n          securityContext:\n            runAsNonRoot: true\n            runAsUser: 10001\n            readOnlyRootFilesystem: true\n            allowPrivilegeEscalation: false\n          volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n          resources:\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n      volumes:\n        - name: tmp\n          emptyDir: {}",
+  "events": [
+    "[   0.1s] Deterministic checks: 4 findings (3 blocking)",
+    "[   0.1s] Validator kubeconform: pass",
+    "[   0.1s] Validator kube-linter: fail",
+    "[   0.1s] Attempt 1/3: asking nvidia/nemotron-3-super-120b-a12b for a patch",
+    "[   2.3s] Attempt 1 verification: FAIL (blocking=0, guard=0, parse_error=None)",
+    "[   2.3s] Attempt 2/3: asking nvidia/nemotron-3-super-120b-a12b for a patch",
+    "[   5.9s] Attempt 2 verification: PASS (blocking=0, guard=0, parse_error=None)",
+    "[   5.9s] Intent gate: NO_HIGH_IMPACT_DRIFT (2 drifts)",
+    "[   5.9s] Final status: VERIFIED"
+  ]
+}

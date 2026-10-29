@@ -77,7 +77,7 @@ flowchart LR
 * **Safety**: the model output is only parsed with `yaml.safe_load_all` and written to a temp sandbox directory.
   Nothing from the model is executed; there is no cluster access.
 * **Limits**: 3 attempts max, `BLASTGUARD_MAX_TOKENS` (default 8192) per call, `BLASTGUARD_TIMEOUT_S` (default 90s)
-  per request, 300s total wall time, 64 KB / 20 documents manifest cap, `BLASTGUARD_SESSION_RUN_CAP` (default 10), `BLASTGUARD_GLOBAL_RUN_CAP` (default 5000 runs per server process; a real run costs roughly 2k tokens)
+  per request, 300s total wall time, 64 KB / 20 documents manifest cap, `BLASTGUARD_SESSION_RUN_CAP` (default 10), `BLASTGUARD_GLOBAL_RUN_CAP` (default 1500 runs per server process; a real run costs roughly 2k tokens)
   runs per UI session.
 
 ## Nemotron + Nebius Token Factory

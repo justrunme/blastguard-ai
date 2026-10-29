@@ -14,7 +14,7 @@ from blastguard_ai.manifest import MAX_MANIFEST_BYTES
 from blastguard_ai.report import to_json, to_markdown
 
 SESSION_RUN_CAP = int(os.environ.get("BLASTGUARD_SESSION_RUN_CAP", "10"))
-GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "5000"))
+GLOBAL_RUN_CAP = int(os.environ.get("BLASTGUARD_GLOBAL_RUN_CAP", "1500"))
 SAMPLES = {p.stem: p.read_text() for p in sorted((Path(__file__).parent / "samples").glob("*.yaml"))}
 COLORS = {"BLOCKED": "#e5484d", "VERIFIED": "#30a46c", "UNRESOLVED": "#f5a524",
           "SAFE_TO_PROPOSE": "#30a46c", "REVIEW_REQUIRED": "#f5a524", "NOT_PROPOSED": "#e5484d"}

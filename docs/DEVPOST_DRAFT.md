@@ -13,21 +13,29 @@ Misconfigured manifests (privileged pods, hostPath, root, LoadBalancer exposure)
 routine but tedious. LLMs can write those fixes, but an unchecked LLM fix is a new risk. We wanted an agent loop
 where the model does the work and deterministic tools hold the veto.
 
+## The idea: because a secure patch can still break production
+Security scanners and AI fixers stop at "the findings are gone". BlastGuard AI adds an Intent Preservation Gate that
+compares the patch to the original and flags changes to what the workload does.
+
 ## How it works
 1. Fail-closed YAML parsing (size cap, safe loader).
 2. 13 Python rules (BG001-BG013) + kubeconform schema validation + kube-linter security subset.
 3. Nemotron receives the manifest and findings and returns the full patched YAML through a `submit_patch` tool call.
 4. The candidate is written to a temp sandbox (never executed), re-checked, and an identity guard ensures the
    workload was fixed, not deleted or swapped.
-5. Up to 3 attempts with verifier feedback; evidence report (JSON/Markdown) with per-attempt findings, tokens, timings.
+5. Intent Preservation Gate on the accepted patch: SAFE_TO_PROPOSE or REVIEW_REQUIRED, with each drift listed.
+6. Up to 3 attempts with verifier feedback; evidence report (JSON/Markdown) with per-attempt findings, tokens, timings.
 
 ## Results
 On this corpus (3 intentionally dangerous manifests; real Nemotron calls via Token Factory), all three went
-BLOCKED → VERIFIED on the first attempt, in 2.9 to 4.8 seconds and 1,403 to 1,649 tokens per run. Blocking findings
-before the patch: 9, 6 and 8; after the patch: 0, verified by the deterministic rules, kubeconform and kube-linter.
-This is a smoke test on three samples, not an evaluation, and VERIFIED means "passed these checks", not "works in a
-cluster": in sample 01 the model swapped `hostPath: /` for an `emptyDir`, which is safe but would break a real log
-collector. The retry path was not needed by the real model on this corpus.
+BLOCKED → VERIFIED on the first attempt in about 2.4 to 4.8 seconds and 1,400 to 1,650 tokens per run (9, 6 and 8
+blocking findings before, 0 after, verified by the deterministic rules, kubeconform and kube-linter).
+
+The Intent Preservation Gate then split them: sample 01 (`hostPath: /` replaced with `emptyDir`, privileged removed)
+and sample 03 (`LoadBalancer` → `ClusterIP`, hostNetwork removed) were marked **REVIEW_REQUIRED**: "security passed,
+but a human must review before it ships". Sample 02 had no high-impact static drift and was marked SAFE_TO_PROPOSE.
+The verdicts were identical across three real runs. This is a smoke test on three samples, not an evaluation, and
+"safe to propose" is not a cluster test. The retry path was not needed by the real model on this corpus.
 
 ## Challenges
 * Getting a verdict you can trust: the model's output is treated as untrusted input, so the loop fails closed to
@@ -41,7 +49,7 @@ collector. The retry path was not needed by the real model on this corpus.
 The original [BlastGuard](https://github.com/justrunme/blastguard) (Go, a CVE blast-radius decision engine) existed
 before the Submission Period and is not integrated in this MVP. Everything in
 [blastguard-ai](https://github.com/justrunme/blastguard-ai) was built during the Submission Period: remediation
-loop, 13 rules, identity guard, validator integration, Nemotron client, evidence reports, Streamlit UI, tests.
+loop, 13 rules, identity guard, Intent Preservation Gate, validator integration, Nemotron client, evidence reports, Streamlit UI, tests.
 
 ## What's next
 * Wire in the original BlastGuard engine for CVE/exposure decisions on the images.

@@ -213,6 +213,22 @@ So the oracles were too lax, not the gate, for at least those 6 runs, and the ga
 naming the exact failure. Limits: post-hoc, one author, a small corpus, static oracles for the rest, and the audit
 judged the nginx container alone because the sidecar image in the case is fictional.
 
+## Red-team notes (after the blind challenge)
+
+After the blind challenge I red-teamed the Intent Gate myself and found a blind spot: only `hostPath` volumes were
+tracked. A `persistentVolumeClaim`, `nfs`, `csi`, `configMap`, `secret` or `projected` volume replaced by `emptyDir`
+(data or config lost across Pod restarts), or such a volume removed, raised no high drift. 9 of 19 new tests in
+`tests/test_intent_volumes.py` failed on the earlier gate.
+
+What I added to `blastguard_ai/intent.py` (all severity high; existing codes and severities unchanged):
+`PERSISTENT_VOLUME_REPLACED`, `CONFIG_VOLUME_REPLACED`, `VOLUME_REMOVED`, `PERSISTENT_VOLUME_CHANGED` (claim or
+backing store changed). The tests include negative controls (emptyDir kept, unchanged PVC/configMap/secret, additive
+`/tmp` emptyDir, added read-only mounts) that must not raise high drift.
+
+This is a static check, not a runtime proof. The benchmark and blind numbers above were produced with the earlier
+gate version (commit `e634137`). Replaying every stored patch offline (48 benchmark runs, 18 blind runs, 4 samples,
+1 runtime case; no model calls) with the new gate changes 0 recorded decisions.
+
 ## Limitations
 
 * Static manifest analysis only: no admission control, no runtime, no cluster access, no Helm/Kustomize rendering.

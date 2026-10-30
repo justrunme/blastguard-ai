@@ -18,6 +18,10 @@ REVIEW_REQUIRED = "REVIEW_REQUIRED"
 NO_HIGH_IMPACT_DRIFT = "NO_HIGH_IMPACT_DRIFT"
 EXPOSING_SERVICE_TYPES = {"LoadBalancer", "NodePort"}
 WRITABLE_SOURCES = {"emptyDir", "persistentVolumeClaim", "ephemeral", "nfs", "hostPath"}
+# Volume sources whose content outlives the Pod or comes from outside it (red-team addition).
+PERSISTENT_SOURCES = {"persistentVolumeClaim", "nfs", "csi", "iscsi", "cephfs", "rbd", "glusterfs", "fc",
+                      "azureFile", "azureDisk", "awsElasticBlockStore", "gcePersistentDisk"}
+CONFIG_SOURCES = {"configMap", "secret", "projected"}
 
 
 def _drift(code: str, severity: str, obj: str, detail: str) -> dict:
@@ -71,6 +75,23 @@ def _pod_drifts(obj: str, o: dict, n: dict) -> list[dict]:
             npath = (new.get("hostPath") or {}).get("path") if isinstance(new.get("hostPath"), dict) else None
             if npath != path:
                 out.append(_drift("HOSTPATH_CHANGED", HIGH, obj, f"hostPath '{name}' path changed {path} -> {npath}"))
+    for name, vol in ov.items():
+        src = _source(vol)
+        kind = "PERSISTENT" if src in PERSISTENT_SOURCES else "CONFIG" if src in CONFIG_SOURCES else None
+        if kind is None:
+            continue
+        new = nv.get(name)
+        if new is None:
+            out.append(_drift("VOLUME_REMOVED", HIGH, obj,
+                              f"{src} volume '{name}' was removed: its data/config is no longer available"))
+        elif _source(new) != src:
+            out.append(_drift(f"{kind}_VOLUME_REPLACED", HIGH, obj,
+                              f"{src} volume '{name}' was replaced by {_source(new)}: "
+                              + ("data no longer survives Pod restarts" if kind == "PERSISTENT"
+                                 else "the workload no longer receives that config/secret content")))
+        elif kind == "PERSISTENT" and new.get(src) != vol.get(src):
+            out.append(_drift("PERSISTENT_VOLUME_CHANGED", HIGH, obj,
+                              f"{src} volume '{name}' now points at a different backing store"))
     if o.get("hostNetwork") is True and n.get("hostNetwork") is not True:
         out.append(_drift("HOSTNETWORK_REMOVED", HIGH, obj,
                           "hostNetwork was turned off: node IP and host ports are no longer used by the workload"))

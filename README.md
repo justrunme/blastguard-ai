@@ -5,6 +5,8 @@
 
 **Live demo:** https://blastguard-ai.streamlit.app/ · **Repo:** https://github.com/justrunme/blastguard-ai
 
+The demo sleeps when idle; if it shows a sleeping page, press the wake button, it starts in about a minute.
+
 Paste a risky Kubernetes manifest. Deterministic checks find the security problems, NVIDIA Nemotron (served by
 Nebius Token Factory) proposes a patched manifest, and independent verifiers decide whether the patch is accepted.
 Up to 3 attempts, then a clear verdict: **BLOCKED → VERIFIED** or **UNRESOLVED**, with a diff and an evidence report.

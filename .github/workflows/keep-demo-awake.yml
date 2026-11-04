@@ -11,7 +11,7 @@ permissions:
 jobs:
   wake:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -20,3 +20,9 @@ jobs:
       - run: pip install playwright
       - run: playwright install --with-deps chromium
       - run: python scripts/wake_demo.py
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wake-debug
+          path: wake-debug.png
+          if-no-files-found: ignore

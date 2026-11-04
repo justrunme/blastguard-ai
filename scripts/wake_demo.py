@@ -34,6 +34,20 @@ def loaded(page):
     return False
 
 
+def dump_debug(page):
+    """Leave a screenshot, frame list and visible text so a failure can be diagnosed."""
+    try:
+        page.screenshot(path="wake-debug.png", full_page=True)
+    except Exception as exc:
+        print(f"screenshot failed: {exc}")
+    for f in frames(page):
+        try:
+            text = (f.inner_text("body", timeout=3000) or "")[:400].replace("\n", " | ")
+        except Exception as exc:
+            text = f"<unreadable: {exc}>"
+        print(f"frame {f.url}: {text}")
+
+
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -41,7 +55,7 @@ def main():
         page.goto(URL, wait_until="domcontentloaded", timeout=60000)
         print(f"opened {page.url}")
         clicked = False
-        deadline = time.time() + 60
+        deadline = time.time() + 90
         while time.time() < deadline:
             if loaded(page):
                 print("app already awake: found 'BlastGuard'")
@@ -56,7 +70,7 @@ def main():
             time.sleep(3)
         if not clicked:
             print("no wake button and no app text after 60s; waiting anyway")
-        deadline = time.time() + 120
+        deadline = time.time() + 180
         while time.time() < deadline:
             if loaded(page):
                 print("app loaded: found 'BlastGuard'")
@@ -64,6 +78,7 @@ def main():
                 return 0
             time.sleep(5)
         print("ERROR: the app never loaded (no 'BlastGuard' text after waiting)")
+        dump_debug(page)
         browser.close()
         return 1
 

@@ -7,14 +7,15 @@
 
 The demo sleeps when idle; if it shows a sleeping page, press the wake button, it starts in about a minute.
 
-Paste a risky Kubernetes manifest. Deterministic checks find the security problems, NVIDIA Nemotron (served by
-Nebius Token Factory) proposes a patched manifest, and independent verifiers decide whether the patch is accepted.
-Up to 3 attempts, then a clear verdict: **BLOCKED → VERIFIED** or **UNRESOLVED**, with a diff and an evidence report.
+## Run in 5 minutes
 
-New in the Submission Period: the **Intent Preservation Gate**. A patch can be secure and still break production, so
-after security verification BlastGuard AI compares the patch with the original and reports what changed in what
-the workload *does* (hostPath → emptyDir, LoadBalancer → ClusterIP, removed command/env/ports, ...). Result:
-**SAFE_TO_PROPOSE** or **REVIEW_REQUIRED** ("security passed, but a human must review before it ships").
+BlastGuard AI takes a risky Kubernetes manifest, finds security issues with deterministic checks, uses NVIDIA Nemotron (Nebius Token Factory) to propose a patched YAML, and accepts it only if independent verifiers and an Intent Preservation Gate agree (**BLOCKED → VERIFIED** or **UNRESOLVED**; release **SAFE_TO_PROPOSE** or **REVIEW_REQUIRED**).
+
+```bash
+make venv
+export NEBIUS_API_KEY=...   # from your secret store
+make run                     # Streamlit UI on :8501
+```
 
 > BlastGuard AI: because a secure patch can still break production.
 
@@ -66,12 +67,14 @@ flowchart LR
   repository (only the tag), scale to 0, or add objects other than NetworkPolicy/ServiceAccount. This stops the
   model from "fixing" a workload by deleting it.
 * **Intent Preservation Gate** (`intent.py`): structural comparison of original vs. accepted patch. *High*
-  drifts (gate the release decision): hostPath removed/replaced/changed, hostNetwork or privileged removed,
-  Service exposure/selector/ports changed, command/args/env/probes changed or removed, container ports or mounts
-  removed, replicas, serviceAccountName, nodeSelector, tolerations or affinity changed. *Medium/info* drifts are
-  listed but do not gate (image tag change, non-root user, read-only root filesystem without a writable mount,
-  dropped capabilities, hostPID/IPC, service account token, resource limits added). It is a static heuristic: it
-  cannot prove a workload still works. If the gate itself errors, it fails closed to REVIEW_REQUIRED.
+  drifts (gate the release decision): hostPath removed/replaced/changed; persistent or config volumes
+  (`persistentVolumeClaim`, `nfs`, `csi`, `configMap`, `secret`, `projected`) removed/replaced/changed;
+  hostNetwork or privileged removed; Service exposure/selector/ports changed; command/args/env/probes changed
+  or removed; container ports or mounts removed; replicas, serviceAccountName, nodeSelector, tolerations or
+  affinity changed; read-only root filesystem without a writable mount. *Medium/info* drifts are listed but do
+  not gate (image tag change, non-root user, dropped capabilities, hostPID/IPC, service account token, resource
+  limits added). It is a static heuristic: it cannot prove a workload still works. If the gate itself errors, it
+  fails closed to REVIEW_REQUIRED.
 * **External validators** (optional, auto-detected in `./bin` or `PATH`): `kubeconform` v0.8.0 (schema validation,
   `-strict`) and `kube-linter` v0.8.3 (a security subset of its checks). If installed, a `fail` from either blocks
   VERIFIED. Their status (`pass`/`fail`/`error`/`not_installed`) is recorded per attempt in the evidence report.
@@ -96,15 +99,12 @@ The model is asked to call a `submit_patch` function with the full patched YAML 
 plain text instead, the largest YAML code block is used (`channel: content_fallback` in the report). Remaining
 findings and verifier errors are fed back on the next attempt.
 
-## Setup
+## More commands
 
 ```bash
-make venv          # python3 -m venv + requirements
 make tools         # optional: kubeconform + kube-linter into ./bin
 make test          # pytest
-export NEBIUS_API_KEY=...   # from your secret store
 make models        # list model IDs available to the key
-make run           # Streamlit UI on :8501
 make demo          # real loop on samples/*.yaml -> examples/
 ```
 
@@ -133,9 +133,8 @@ tool call), latest real run, see `examples/summary.json`:
 | 04-stateless-api-missing-limits | 3 | VERIFIED | SAFE_TO_PROPOSE | none | 2 | 2948 |
 
 Samples 01 to 03 are intentionally dangerous; sample 04 is a mostly hardened API and is the only one that reaches
-SAFE_TO_PROPOSE. In the latest run, sample 04 needed two attempts: attempt 1 failed kube-linter, and the failure
-was fed back to the model (the first time the retry path was exercised by the real model). Release decisions were
-stable across the real runs I did, but earlier runs differed in attempt counts and tokens, and the model is
+SAFE_TO_PROPOSE. On this corpus, sample 04 needed two attempts: attempt 1 failed kube-linter, and the failure
+was fed back to the model. Attempt counts and tokens can differ across runs because the model is
 non-deterministic. This table is a smoke test; the benchmark, blind challenge and runtime proof below add more evidence.
 
 SAFE_TO_PROPOSE requires: security verification passed, every external validator (kubeconform, kube-linter) ran
@@ -215,29 +214,13 @@ So the oracles were too lax, not the gate, for at least those 6 runs, and the ga
 naming the exact failure. Limits: post-hoc, one author, a small corpus, static oracles for the rest, and the audit
 judged the nginx container alone because the sidecar image in the case is fictional.
 
-## Red-team notes (after the blind challenge)
-
-After the blind challenge I red-teamed the Intent Gate myself and found a blind spot: only `hostPath` volumes were
-tracked. A `persistentVolumeClaim`, `nfs`, `csi`, `configMap`, `secret` or `projected` volume replaced by `emptyDir`
-(data or config lost across Pod restarts), or such a volume removed, raised no high drift. 9 of 19 new tests in
-`tests/test_intent_volumes.py` failed on the earlier gate.
-
-What I added to `blastguard_ai/intent.py` (all severity high; existing codes and severities unchanged):
-`PERSISTENT_VOLUME_REPLACED`, `CONFIG_VOLUME_REPLACED`, `VOLUME_REMOVED`, `PERSISTENT_VOLUME_CHANGED` (claim or
-backing store changed). The tests include negative controls (emptyDir kept, unchanged PVC/configMap/secret, additive
-`/tmp` emptyDir, added read-only mounts) that must not raise high drift.
-
-This is a static check, not a runtime proof. The benchmark and blind numbers above were produced with the earlier
-gate version (commit `e634137`). Replaying every stored patch offline (48 benchmark runs, 18 blind runs, 4 samples,
-1 runtime case; no model calls) with the new gate changes 0 recorded decisions.
-
 ## Limitations
 
 * Static manifest analysis only: no admission control, no runtime, no cluster access, no Helm/Kustomize rendering.
 * The rule set is intentionally small; passing it does not make a workload secure.
 * Pinned image tags are chosen by the model; BlastGuard AI does not check that the tag exists in the registry.
   Review the diff (e.g. `readOnlyRootFilesystem: true` may need writable `emptyDir` mounts for the app to start).
-* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster. The app itself never touches a cluster; the cluster evidence below comes from separate CI runs on disposable kind clusters.
+* VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster. The app itself never touches a cluster; the cluster evidence above comes from separate CI runs on disposable kind clusters.
 * CVE/exposure decisions from the original BlastGuard are not wired in yet.
 
 ## License

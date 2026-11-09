@@ -223,6 +223,10 @@ judged the nginx container alone because the sidecar image in the case is fictio
 * VERIFIED means "passed these security checks"; the Intent Gate adds a review signal but neither is a test in a cluster. The app itself never touches a cluster; the cluster evidence above comes from separate CI runs on disposable kind clusters.
 * CVE/exposure decisions from the original BlastGuard are not wired in yet.
 
+## Author
+
+Andrey Lesnikov, Senior DevOps & AI Platform Engineer ([ORCID](https://orcid.org/0009-0004-7583-4314)).
+
 ## License
 
 Apache-2.0. Copyright Andrey Lesnikov.

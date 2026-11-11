@@ -18,7 +18,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install playwright
-      - run: playwright install --with-deps chromium
+      - name: Install Chromium (retry on flaky apt mirrors)
+        run: |
+          for i in 1 2 3; do
+            playwright install --with-deps --only-shell chromium && exit 0
+            echo "install attempt $i failed, retrying in 20s"; sleep 20
+          done
+          echo "apt mirrors unreachable, installing Chromium without system deps"
+          playwright install --only-shell chromium
       - run: python scripts/wake_demo.py
       - if: failure()
         uses: actions/upload-artifact@v4
